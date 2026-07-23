@@ -15,6 +15,9 @@ test = ["pytest"]
 [project.scripts]
 getnews = "calibre_news.cli:main"
 
+[tool.setuptools]
+packages = ["calibre_news", "calibre_news.recipes"]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
