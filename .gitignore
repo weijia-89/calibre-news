@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Project artifacts
+output/
+tmp_html/
+
+# Editor
+.DS_Store
+*.swp
+*.swo

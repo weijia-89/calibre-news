@@ -1,0 +1,40 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class NewschoolHeadlines(BasicNewsRecipe):
+    title = 'The New School — In the Headlines'
+    oldest_article = 7
+    compress_news_images = True
+    scale_news_images = (1264, 1680)
+    language = 'en'
+    requires_version = (9, 0, 0)
+    auto_cleanup = True
+
+    # keep_only_tags = []
+    # remove_tags = []
+
+    # No RSS feed — this site is a link-roll page that aggregates
+    # outbound article links from New School-affiliated faculty/students.
+    # Use parse_index() to scrape https://blogs.newschool.edu/news/in-the-headlines/
+    # for article URLs, titles, and descriptions.
+    feeds = []
+
+    # For review: open the generated .html with `open newschool_headlines/for_review.html`
+
+    def parse_index(self):
+        """
+        Stub: scrape https://blogs.newschool.edu/news/in-the-headlines/ for
+        outbound article links. The page is a headline link roll (not RSS),
+        so this method should extract each linked article's URL, title, and
+        a summary/description, then return a list of feeds in Calibre format:
+
+            [
+                ('In the Headlines', [
+                    {'title': ..., 'url': ..., 'description': ..., 'date': ...},
+                ]),
+            ]
+
+        The `for_review` offline fallback should be used to debug parsing:
+        save a local copy of the page, place it at
+        newschool_headlines/for_review.html, and iterate here.
+        """
+        return []

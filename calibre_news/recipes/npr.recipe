@@ -1,0 +1,20 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class NPR(BasicNewsRecipe):
+    title = 'NPR'
+    oldest_article = 7
+    compress_news_images = True
+    scale_news_images = (1264, 1680)
+    language = 'en'
+    requires_version = (9, 0, 0)
+    auto_cleanup = True
+
+    # keep_only_tags = []
+    # remove_tags = []
+
+    # FIXME: find working NPR RSS feed URL
+    feeds = [
+        # ('NPR News', 'https://feeds.npr.org/1001/rss.xml'),
+    ]
+
+    # For review: open the generated .html with `open npr/for_review.html`

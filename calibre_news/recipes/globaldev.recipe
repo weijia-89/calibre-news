@@ -1,0 +1,20 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class GlobalDev(BasicNewsRecipe):
+    title = 'Global Development'
+    oldest_article = 7
+    compress_news_images = True
+    scale_news_images = (1264, 1680)
+    language = 'en'
+    requires_version = (9, 0, 0)
+    auto_cleanup = True
+
+    # keep_only_tags = []
+    # remove_tags = []
+
+    # FIXME: verify RSS feed URL (Guardian Global Development)
+    feeds = [
+        # ('Global Development', 'https://www.theguardian.com/global-development/rss'),
+    ]
+
+    # For review: open the generated .html with `open globaldev/for_review.html`

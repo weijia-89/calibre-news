@@ -1,0 +1,20 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class TwoEightyFiveSouth(BasicNewsRecipe):
+    title = '285 South'
+    oldest_article = 7
+    compress_news_images = True
+    scale_news_images = (1264, 1680)
+    language = 'en'
+    requires_version = (9, 0, 0)
+    auto_cleanup = True
+
+    # keep_only_tags = []
+    # remove_tags = []
+
+    # FIXME: verify RSS URL
+    feeds = [
+        ('285 South', 'https://285south.com/feed/'),
+    ]
+
+    # For review: open the generated .html with `open 285_south/for_review.html`

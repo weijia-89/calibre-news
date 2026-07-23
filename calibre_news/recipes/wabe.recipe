@@ -1,0 +1,20 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class WABE(BasicNewsRecipe):
+    title = 'WABE'
+    oldest_article = 7
+    compress_news_images = True
+    scale_news_images = (1264, 1680)
+    language = 'en'
+    requires_version = (9, 0, 0)
+    auto_cleanup = True
+
+    # keep_only_tags = []
+    # remove_tags = []
+
+    # FIXME: verify RSS URL (declared in HTML but returns 404 – try /news/feed/)
+    feeds = [
+        ('WABE', 'https://www.wabe.org/feed/'),
+    ]
+
+    # For review: open the generated .html with `open wabe/for_review.html`

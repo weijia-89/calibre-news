@@ -1,0 +1,20 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class Decaturish(BasicNewsRecipe):
+    title = 'Decaturish'
+    oldest_article = 7
+    compress_news_images = True
+    scale_news_images = (1264, 1680)
+    language = 'en'
+    requires_version = (9, 0, 0)
+    auto_cleanup = True
+
+    # keep_only_tags = []
+    # remove_tags = []
+
+    # FIXME: verify RSS URL (TownNews BLOX CMS)
+    feeds = [
+        ('Decaturish', 'http://www.decaturish.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc'),
+    ]
+
+    # For review: open the generated .html with `open decaturish/for_review.html`

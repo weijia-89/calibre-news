@@ -1,0 +1,20 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class Truthout(BasicNewsRecipe):
+    title = 'Truthout'
+    oldest_article = 7
+    compress_news_images = True
+    scale_news_images = (1264, 1680)
+    language = 'en'
+    requires_version = (9, 0, 0)
+    auto_cleanup = True
+
+    # keep_only_tags = []
+    # remove_tags = []
+
+    # FIXME: verify RSS feed URL
+    feeds = [
+        # ('Truthout', 'https://truthout.org/feed/'),
+    ]
+
+    # For review: open the generated .html with `open truthout/for_review.html`
