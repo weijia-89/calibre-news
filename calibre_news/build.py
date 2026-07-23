@@ -7,8 +7,10 @@ Reads the site catalog, converts each recipe to EPUB via Calibre's
 
 import argparse
 import concurrent.futures
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from ._calibre import find_ebook_convert, OUTPUT_PROFILE, PRUNE_DAYS
@@ -42,8 +44,7 @@ def load_catalog():
     return subject_to_slugs, ordered_slugs
 
 
-def _build_one(slug: str, subject: str, timeout: int) -> tuple[str, str | None]:
-    """Build a single EPUB. Returns (slug, error_message_or_none)."""
+def _build_one(slug: str, subject: str, calibre_bin: str, timeout: int) -> tuple[str, str | None]:
     recipe_path = RECIPES_DIR / f"{slug}.recipe"
     if not recipe_path.is_file():
         return slug, f"Recipe not found: {recipe_path}"
@@ -52,7 +53,6 @@ def _build_one(slug: str, subject: str, timeout: int) -> tuple[str, str | None]:
     dest_dir.mkdir(parents=True, exist_ok=True)
     epub_path = dest_dir / f"{slug}.epub"
 
-    calibre_bin = str(find_ebook_convert())
     cmd = [
         calibre_bin,
         str(recipe_path),
@@ -72,9 +72,8 @@ def _build_one(slug: str, subject: str, timeout: int) -> tuple[str, str | None]:
 
 
 def prune_old_epubs():
-    """Delete EPUBs older than PRUNE_DAYS."""
-    cutoff = PRUNE_DAYS * 86400  # seconds
-    import time
+    """Delete EPUBs older than PRUNE_DAYS (seconds)."""
+    cutoff = PRUNE_DAYS * 86400
     now = time.time()
     for epub in OUTPUT_ROOT.rglob("*.epub"):
         if now - epub.stat().st_mtime > cutoff:
@@ -120,21 +119,26 @@ def main():
             sys.exit(2)
         slugs = [args.slug]
 
+    try:
+        calibre_bin = str(find_ebook_convert())
+    except FileNotFoundError as e:
+        print(e, file=sys.stderr)
+        sys.exit(2)
+
     if args.dry_run:
-        calibre_bin = find_ebook_convert()
         for slug in slugs:
             subject = next(s for s, lst in subject_to_slugs.items() if slug in lst)
             print(f"{calibre_bin} {RECIPES_DIR}/{slug}.recipe {OUTPUT_ROOT}/{subject}/{slug}.epub --output-profile={OUTPUT_PROFILE}")
         return
 
-    parallel = args.parallel or __import__("os").cpu_count() or 4
+    parallel = args.parallel or os.cpu_count() or 4
     failed = []
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=parallel) as ex:
         futures = {
             ex.submit(_build_one, slug,
                       next(s for s, lst in subject_to_slugs.items() if slug in lst),
-                      args.timeout): slug
+                      calibre_bin, args.timeout): slug
             for slug in slugs
         }
         for fut in concurrent.futures.as_completed(futures):

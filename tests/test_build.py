@@ -1,6 +1,7 @@
 """Tests for the Calibre-native build system."""
 
 import io
+import os
 import sys
 import tempfile
 import time
@@ -118,36 +119,25 @@ class TestDryRun:
 
 class TestPruning:
 
-    def test_prune_old_epubs_cleans(self):
+    def test_prune_old_epubs_cleans(self, tmp_path):
         """Prune removes EPUBs with old mtime, keeps new ones."""
-        from calibre_news.build import prune_old_epubs, OUTPUT_ROOT
+        from calibre_news.build import prune_old_epubs
         from calibre_news._calibre import PRUNE_DAYS
 
-        # Create test output dir
-        test_dir = OUTPUT_ROOT / "__test_prune__"
-        test_dir.mkdir(parents=True, exist_ok=True)
-
-        epub_old = test_dir / "old_file.epub"
-        epub_new = test_dir / "new_file.epub"
+        epub_old = tmp_path / "old_file.epub"
+        epub_new = tmp_path / "new_file.epub"
         epub_old.write_text("old content")
         epub_new.write_text("new content")
 
-        # Set old mtime to PRUNE_DAYS + 1 days ago (in future)
-        # Actually we need it past cutoff. Let's set old to 8 days ago.
         old_time = time.time() - (PRUNE_DAYS + 1) * 86400
-        os = __import__("os")
         os.utime(str(epub_old), (old_time, old_time))
 
-        # Capture output to avoid clutter
-        with patch("sys.stdout", io.StringIO()):
-            prune_old_epubs()
+        with patch("calibre_news.build.OUTPUT_ROOT", tmp_path):
+            with patch("sys.stdout", io.StringIO()):
+                prune_old_epubs()
 
-        assert not epub_old.exists(), "Old EPUB should be deleted"
-        assert epub_new.exists(), "New EPUB should survive"
-
-        # Cleanup
-        epub_new.unlink()
-        test_dir.rmdir()
+        assert not epub_old.exists()
+        assert epub_new.exists()
 
 
 # ---------------------------------------------------------------------------
@@ -173,6 +163,20 @@ class TestExitCodes:
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 2
+
+    def test_partial_failure_exits_1(self):
+        """When one slug's ebook-convert fails, exit code is 1."""
+        import subprocess
+        from calibre_news.build import main
+
+        with patch("sys.argv", ["getnews", "--slug", "rtings"]):
+            with patch("calibre_news.build.find_ebook_convert",
+                       return_value=Path("/fake/ebook-convert")):
+                with patch.object(subprocess, "run",
+                                  side_effect=subprocess.CalledProcessError(1, [], stderr="fake fail")):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 1
 
 
 # ---------------------------------------------------------------------------
