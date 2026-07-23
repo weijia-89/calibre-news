@@ -1,4 +1,4 @@
-# Calibre News Aggregator — Usage Guide
+# Calibre News Aggregator  -  Usage Guide
 
 ## Prerequisites
 
@@ -58,7 +58,7 @@ Alternative via Make:
 
 ## Site Catalog
 
-20 sites in 5 subject groups, defined in `docs/CATALOG.md` (the single source of truth — no recipe is built for a slug absent from this file).
+20 sites in 5 subject groups, defined in `docs/CATALOG.md` (the single source of truth  -  no recipe is built for a slug absent from this file).
 
 ### Tech (6)
 
@@ -86,7 +86,7 @@ Alternative via Make:
 | `darkreading` | Dark Reading | `https://www.darkreading.com/rss.xml` |
 | `schneier` | Schneier on Security | `https://www.schneier.com/feed/` |
 
-### Local — Atlanta Metro (5)
+### Local  -  Atlanta Metro (5)
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
@@ -94,7 +94,7 @@ Alternative via Make:
 | `saportareport` | SaportaReport | `https://saportareport.com/feed/` |
 | `decaturish` | Decaturish | `http://www.decaturish.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc` |
 | `atlpresscollective` | Atlanta Community Press Collective | `https://atlpresscollective.com/feed/` |
-| `wabe` | WABE | `https://www.wabe.org/feed/` (may return 404 — try `/news/feed/`) |
+| `wabe` | WABE | `https://www.wabe.org/feed/` (may return 404  -  try `/news/feed/`) |
 
 ### News (4)
 
@@ -103,7 +103,7 @@ Alternative via Make:
 | `npr` | NPR | `https://feeds.npr.org/1001/rss.xml` |
 | `truthout` | Truthout | `https://truthout.org/feed/` |
 | `globaldev` | Guardian Global Dev | `https://www.theguardian.com/global-development/rss` |
-| `newschool_headlines` | The New School — In the Headlines | No RSS — uses `parse_index()` to scrape link-roll page |
+| `newschool_headlines` | The New School  -  In the Headlines | No RSS  -  uses `parse_index()` to scrape link-roll page |
 
 Note: `newschool_headlines` produces an EPUB under the `news` subject directory despite being its own recipe.
 
@@ -140,11 +140,11 @@ class ExampleSite(BasicNewsRecipe):
 
 ### Content filtering
 
-- **`keep_only_tags`** — when set, Calibre discards everything not matched by these selectors. Use this to isolate the article body.
-- **`remove_tags`** — when set, Calibre removes matched elements from the page before conversion.
-- **`auto_cleanup = True`** — fallback that heuristically strips navigation, ads, and chrome when no explicit tags are configured. Relies on Calibre's built-in heuristics; for problem sites, prefer explicit `keep_only_tags`.
+- **`keep_only_tags`**  -  when set, Calibre discards everything not matched by these selectors. Use this to isolate the article body.
+- **`remove_tags`**  -  when set, Calibre removes matched elements from the page before conversion.
+- **`auto_cleanup = True`**  -  fallback that heuristically strips navigation, ads, and chrome when no explicit tags are configured. Relies on Calibre's built-in heuristics; for problem sites, prefer explicit `keep_only_tags`.
 
-Neither is populated in current stubs — they are filled per-site during the `for_review` workflow.
+Neither is populated in current stubs  -  they are filled per-site during the `for_review` workflow.
 
 ## Offline Fallback (`for_review`)
 
@@ -171,13 +171,13 @@ Site-specific grab instructions (from `for_review/README.md`):
 
 | Slug | Source URL to save |
 |------|--------------------|
-| `digitalapplied` | `https://www.digitalapplied.com/blog/category/ai-development` — one article |
-| `rtings` | `https://www.rtings.com/research/new` — one `/research/<slug>/` page |
-| `cats` | `https://cats.com/reviews` — one `/reviews/<slug>/` page |
-| `consumerlab` | `https://www.consumerlab.com/product-updates/` — one `?id=<n>` page |
-| `chipsandcheese` | `https://chipsandcheese.com/` (or `.substack.com`) — one article |
-| `wabe` | `https://www.wabe.org` — one article |
-| `newschool_headlines` | `https://blogs.newschool.edu/news/in-the-headlines/` — full page save (not the feed) |
+| `digitalapplied` | `https://www.digitalapplied.com/blog/category/ai-development`  -  one article |
+| `rtings` | `https://www.rtings.com/research/new`  -  one `/research/<slug>/` page |
+| `cats` | `https://cats.com/reviews`  -  one `/reviews/<slug>/` page |
+| `consumerlab` | `https://www.consumerlab.com/product-updates/`  -  one `?id=<n>` page |
+| `chipsandcheese` | `https://chipsandcheese.com/` (or `.substack.com`)  -  one article |
+| `wabe` | `https://www.wabe.org`  -  one article |
+| `newschool_headlines` | `https://blogs.newschool.edu/news/in-the-headlines/`  -  full page save (not the feed) |
 
 ## Image Configuration
 
@@ -232,11 +232,11 @@ Subject directories are created on first run. The mapping from slug to subject i
 
 ## Adding a New Site
 
-1. **Add to CATALOG.md** — insert the slug under the appropriate subject line in the fenced code block. The build will not build a site absent from this file.
-2. **Create recipe stub** — copy an existing `.recipe` file to `calibre_news/recipes/<slug>.recipe`. Update `title` and the class name.
-3. **Fill in the feed URL** — set the `feeds` list with the site's RSS endpoint. If the site has no RSS, implement `parse_index()` (see `newschool_headlines.recipe` for a template).
-4. **Add cleanup rules** — use the `for_review` workflow: drop a saved HTML page at `for_review/<slug>.html`, run the review command, inspect the output, then adjust `keep_only_tags` / `remove_tags` until the article body is clean.
-5. **(Optional) Create meta file** — `recipes/<slug>.meta.yaml` for per-site overrides (e.g. custom `extra_args`, non-default image dimensions). Not yet implemented.
+1. **Add to CATALOG.md**  -  insert the slug under the appropriate subject line in the fenced code block. The build will not build a site absent from this file.
+2. **Create recipe stub**  -  copy an existing `.recipe` file to `calibre_news/recipes/<slug>.recipe`. Update `title` and the class name.
+3. **Fill in the feed URL**  -  set the `feeds` list with the site's RSS endpoint. If the site has no RSS, implement `parse_index()` (see `newschool_headlines.recipe` for a template).
+4. **Add cleanup rules**  -  use the `for_review` workflow: drop a saved HTML page at `for_review/<slug>.html`, run the review command, inspect the output, then adjust `keep_only_tags` / `remove_tags` until the article body is clean.
+5. **(Optional) Create meta file**  -  `recipes/<slug>.meta.yaml` for per-site overrides (e.g. custom `extra_args`, non-default image dimensions). Not yet implemented.
 
 ## Troubleshooting
 
@@ -246,6 +246,6 @@ Subject directories are created on first run. The mapping from slug to subject i
 | `ebook-convert` hangs | Site slow or blocking | Save the article manually to `for_review/<slug>.html` and re-run |
 | `[FAIL] Unable to fetch ...` | Feed URL changed or site down | Check the site's RSS feed URL. Update `feeds` in the recipe. |
 | EPUB has navigation/ads in article body | `keep_only_tags` / `remove_tags` not set | Use the `for_review` workflow to identify the correct selectors |
-| `curl: (22) HTTP 404` | Feed URL is stale | Verify the feed URL in a browser. WABE is a known offender — try `/news/feed/` instead of `/feed/`. |
+| `curl: (22) HTTP 404` | Feed URL is stale | Verify the feed URL in a browser. WABE is a known offender  -  try `/news/feed/` instead of `/feed/`. |
 | `oldest_article` not filtering | Calibre's feed parser date extraction may fail | Set `max_articles_per_feed` as an additional constraint in the recipe |
 | Recipe `feeds = []` but site has no RSS | Site uses JS-rendered content or link-roll | Implement `parse_index()` (see `newschool_headlines.recipe` stub) |

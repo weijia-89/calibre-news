@@ -6,7 +6,6 @@ cleanup settings against real page content.
 """
 
 import argparse
-import os
 import shutil
 import subprocess
 import sys
@@ -41,16 +40,14 @@ def main():
         print(f"Stub file not found: {html_file}", file=sys.stderr)
         sys.exit(2)
 
-    # Create output/review directory
     review_dir = OUTPUT_ROOT / "review"
     review_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy recipe to review directory
-    recipe_dst = review_dir / f"{slug}.recipe"
-    shutil.copy2(recipe_src, recipe_dst)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        recipe_dst = Path(tmpdir) / f"{slug}.recipe"
+        shutil.copy2(recipe_src, recipe_dst)
 
-    # Append override block
-    override = f'''
+        override = f'''
 
 # for_review overrides — appended programmatically
 feeds = []
@@ -68,32 +65,27 @@ def parse_index(self):
         'content': str(soup),
     }})]
 '''
-    with open(recipe_dst, "a", encoding="utf-8") as f:
-        f.write(override)
+        with open(recipe_dst, "a", encoding="utf-8") as f:
+            f.write(override)
 
-    # Run ebook-convert
-    calibre_bin = str(find_ebook_convert())
-    epub_path = review_dir / f"{slug}.epub"
-    cmd = [
-        calibre_bin,
-        str(recipe_dst),
-        str(epub_path),
-        f"--output-profile={OUTPUT_PROFILE}",
-    ]
+        calibre_bin = str(find_ebook_convert())
+        epub_path = review_dir / f"{slug}.epub"
+        cmd = [
+            calibre_bin,
+            str(recipe_dst),
+            str(epub_path),
+            f"--output-profile={OUTPUT_PROFILE}",
+        ]
 
-    try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=args.timeout)
-        print(f"[OK] Review EPUB written to {epub_path}")
-    except subprocess.TimeoutExpired:
-        print(f"[FAIL] Timeout after {args.timeout}s", file=sys.stderr)
-        sys.exit(1)
-    except subprocess.CalledProcessError as e:
-        print(f"[FAIL] {e.stderr.strip() or e}", file=sys.stderr)
-        sys.exit(1)
-    finally:
-        # Clean up the modified recipe
-        if recipe_dst.exists():
-            recipe_dst.unlink()
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=args.timeout)
+            print(f"[OK] Review EPUB written to {epub_path}")
+        except subprocess.TimeoutExpired:
+            print(f"[FAIL] Timeout after {args.timeout}s", file=sys.stderr)
+            sys.exit(1)
+        except subprocess.CalledProcessError as e:
+            print(f"[FAIL] {e.stderr.strip() or e}", file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

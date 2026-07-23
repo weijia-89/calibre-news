@@ -1,6 +1,7 @@
 """Tests for the Calibre-native build system."""
 
 import io
+import os
 import sys
 import tempfile
 import time
@@ -10,6 +11,22 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+
+def _patch_catalog(text):
+    """Helper: patch Path.read_text on the CATALOG_PATH to return ``text``.
+
+    Python ≥3.14 makes ``PosixPath.read_text`` read-only; ``patch.object``
+    on an instance attribute fails.  We mock the *class* method.
+    """
+    from calibre_news.build import CATALOG_PATH
+    from pathlib import Path as PathCls
+
+    def _fake_read_text(self, encoding=None):
+        _ = self  # unused — return the fixture text regardless of which Path
+        return text
+
+    return patch.object(PathCls, "read_text", _fake_read_text), CATALOG_PATH
 
 
 @pytest.fixture
@@ -34,7 +51,6 @@ class TestCatalogParsing:
         assert "security" in subject_map
         assert "local" in subject_map
         assert "news" in subject_map
-        # Subject slug counts
         assert len(subject_map["tech"]) == 6
         assert len(subject_map["consumer"]) == 2
         assert len(subject_map["security"]) == 3
@@ -51,6 +67,33 @@ class TestCatalogParsing:
         for slugs in subject_map.values():
             reconstructed.extend(slugs)
         assert ordered == reconstructed
+
+    def test_load_catalog_rejects_unknown_subject(self):
+        """Malformed catalog with unknown subject raises ValueError."""
+        from calibre_news.build import load_catalog
+
+        mock, _ = _patch_catalog("```\nunknown_subj : slug1\n```")
+        with mock:
+            with pytest.raises(ValueError, match="unknown subject"):
+                load_catalog()
+
+    def test_load_catalog_rejects_empty_slugs(self):
+        """Subject line with no slugs raises ValueError."""
+        from calibre_news.build import load_catalog
+
+        mock, _ = _patch_catalog("```\ntech :\n```")
+        with mock:
+            with pytest.raises(ValueError, match="has no slugs"):
+                load_catalog()
+
+    def test_load_catalog_rejects_empty(self):
+        """Catalog with zero subjects raises ValueError."""
+        from calibre_news.build import load_catalog
+
+        mock, _ = _patch_catalog("```\n```")
+        with mock:
+            with pytest.raises(ValueError, match="parsed empty"):
+                load_catalog()
 
 
 # ---------------------------------------------------------------------------
@@ -118,36 +161,25 @@ class TestDryRun:
 
 class TestPruning:
 
-    def test_prune_old_epubs_cleans(self):
+    def test_prune_old_epubs_cleans(self, tmp_path):
         """Prune removes EPUBs with old mtime, keeps new ones."""
-        from calibre_news.build import prune_old_epubs, OUTPUT_ROOT
+        from calibre_news.build import prune_old_epubs
         from calibre_news._calibre import PRUNE_DAYS
 
-        # Create test output dir
-        test_dir = OUTPUT_ROOT / "__test_prune__"
-        test_dir.mkdir(parents=True, exist_ok=True)
-
-        epub_old = test_dir / "old_file.epub"
-        epub_new = test_dir / "new_file.epub"
+        epub_old = tmp_path / "old_file.epub"
+        epub_new = tmp_path / "new_file.epub"
         epub_old.write_text("old content")
         epub_new.write_text("new content")
 
-        # Set old mtime to PRUNE_DAYS + 1 days ago (in future)
-        # Actually we need it past cutoff. Let's set old to 8 days ago.
         old_time = time.time() - (PRUNE_DAYS + 1) * 86400
-        os = __import__("os")
         os.utime(str(epub_old), (old_time, old_time))
 
-        # Capture output to avoid clutter
-        with patch("sys.stdout", io.StringIO()):
-            prune_old_epubs()
+        with patch("calibre_news.build.OUTPUT_ROOT", tmp_path):
+            with patch("sys.stdout", io.StringIO()):
+                prune_old_epubs()
 
-        assert not epub_old.exists(), "Old EPUB should be deleted"
-        assert epub_new.exists(), "New EPUB should survive"
-
-        # Cleanup
-        epub_new.unlink()
-        test_dir.rmdir()
+        assert not epub_old.exists()
+        assert epub_new.exists()
 
 
 # ---------------------------------------------------------------------------
@@ -173,6 +205,30 @@ class TestExitCodes:
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 2
+
+    def test_partial_failure_exits_1(self):
+        """When one slug's ebook-convert fails, exit code is 1."""
+        import subprocess
+        from calibre_news.build import main
+
+        with patch("sys.argv", ["getnews", "--slug", "rtings"]):
+            with patch("calibre_news.build.find_ebook_convert",
+                       return_value=Path("/fake/ebook-convert")):
+                with patch.object(subprocess, "run",
+                                  side_effect=subprocess.CalledProcessError(1, [], stderr="fake fail")):
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+                    assert exc_info.value.code == 1
+
+    def test_prune_only_wins_over_no_prune(self):
+        """When both --prune-only and --no-prune, --prune-only wins (no build)."""
+        from calibre_news.build import main
+
+        # Patch prune_old_epubs to be a no-op so we don't touch real files
+        with patch("sys.argv", ["getnews", "--prune-only", "--no-prune"]):
+            with patch("calibre_news.build.prune_old_epubs"):
+                # Should NOT call load_catalog or find_ebook_convert — returns early
+                main()  # no SystemExit = prune_only short-circuited correctly
 
 
 # ---------------------------------------------------------------------------

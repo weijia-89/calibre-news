@@ -7,8 +7,10 @@ Reads the site catalog, converts each recipe to EPUB via Calibre's
 
 import argparse
 import concurrent.futures
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from ._calibre import find_ebook_convert, OUTPUT_PROFILE, PRUNE_DAYS
@@ -16,12 +18,31 @@ from ._calibre import find_ebook_convert, OUTPUT_PROFILE, PRUNE_DAYS
 CATALOG_PATH = Path(__file__).resolve().parents[1] / "docs" / "CATALOG.md"
 RECIPES_DIR = Path(__file__).resolve().parent / "recipes"
 OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "output"
+VALID_SUBJECTS = frozenset({"tech", "consumer", "security", "local", "news"})
+
+
+def _extension_from_line(line: str) -> tuple[str, list[str]]:
+    """Parse a CATALOG.md data line: ``subject : slug, slug, ...``.
+
+    Raises ``ValueError`` if the subject is not in the locked taxonomy.
+    """
+    if ":" not in line:
+        raise ValueError("catalog line missing colon")
+    subject, slugs = line.split(":", 1)
+    subject = subject.strip()
+    if subject not in VALID_SUBJECTS:
+        raise ValueError(f"unknown subject in catalog: {subject!r}")
+    slugs_list = [s.strip() for s in slugs.split(",") if s.strip()]
+    if not slugs_list:
+        raise ValueError(f"subject {subject!r} has no slugs")
+    return subject, slugs_list
 
 
 def load_catalog():
     """Parse the CATALOG.md file.
 
     Returns a tuple of (subject_to_slugs, ordered_slugs).
+    Raises ``ValueError`` on malformed input.
     """
     subject_to_slugs: dict[str, list[str]] = {}
     ordered_slugs: list[str] = []
@@ -32,18 +53,20 @@ def load_catalog():
             continue
         if not in_block:
             continue
-        if ":" not in line:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
             continue
-        subject, slugs = line.split(":", 1)
-        subject = subject.strip()
-        slugs_list = [s.strip() for s in slugs.split(",") if s.strip()]
+        subject, slugs_list = _extension_from_line(line)
+        if subject in subject_to_slugs:
+            raise ValueError(f"duplicate subject in catalog: {subject!r}")
         subject_to_slugs[subject] = slugs_list
         ordered_slugs.extend(slugs_list)
+    if not subject_to_slugs:
+        raise ValueError("catalog parsed empty — no subject entries found")
     return subject_to_slugs, ordered_slugs
 
 
-def _build_one(slug: str, subject: str, timeout: int) -> tuple[str, str | None]:
-    """Build a single EPUB. Returns (slug, error_message_or_none)."""
+def _build_one(slug: str, subject: str, calibre_bin: str, timeout: int) -> tuple[str, str | None]:
     recipe_path = RECIPES_DIR / f"{slug}.recipe"
     if not recipe_path.is_file():
         return slug, f"Recipe not found: {recipe_path}"
@@ -52,7 +75,6 @@ def _build_one(slug: str, subject: str, timeout: int) -> tuple[str, str | None]:
     dest_dir.mkdir(parents=True, exist_ok=True)
     epub_path = dest_dir / f"{slug}.epub"
 
-    calibre_bin = str(find_ebook_convert())
     cmd = [
         calibre_bin,
         str(recipe_path),
@@ -72,9 +94,8 @@ def _build_one(slug: str, subject: str, timeout: int) -> tuple[str, str | None]:
 
 
 def prune_old_epubs():
-    """Delete EPUBs older than PRUNE_DAYS."""
-    cutoff = PRUNE_DAYS * 86400  # seconds
-    import time
+    """Delete EPUBs older than PRUNE_DAYS (seconds)."""
+    cutoff = PRUNE_DAYS * 86400
     now = time.time()
     for epub in OUTPUT_ROOT.rglob("*.epub"):
         if now - epub.stat().st_mtime > cutoff:
@@ -102,7 +123,11 @@ def main():
         prune_old_epubs()
         return
 
-    subject_to_slugs, ordered_slugs = load_catalog()
+    try:
+        subject_to_slugs, ordered_slugs = load_catalog()
+    except (ValueError, FileNotFoundError, OSError) as e:
+        print(f"Catalog error: {e}", file=sys.stderr)
+        sys.exit(2)    
 
     # Filter by subject
     if args.subject:
@@ -120,21 +145,26 @@ def main():
             sys.exit(2)
         slugs = [args.slug]
 
+    try:
+        calibre_bin = str(find_ebook_convert())
+    except FileNotFoundError as e:
+        print(e, file=sys.stderr)
+        sys.exit(2)
+
     if args.dry_run:
-        calibre_bin = find_ebook_convert()
         for slug in slugs:
             subject = next(s for s, lst in subject_to_slugs.items() if slug in lst)
             print(f"{calibre_bin} {RECIPES_DIR}/{slug}.recipe {OUTPUT_ROOT}/{subject}/{slug}.epub --output-profile={OUTPUT_PROFILE}")
         return
 
-    parallel = args.parallel or __import__("os").cpu_count() or 4
+    parallel = args.parallel or os.cpu_count() or 4
     failed = []
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=parallel) as ex:
         futures = {
             ex.submit(_build_one, slug,
                       next(s for s, lst in subject_to_slugs.items() if slug in lst),
-                      args.timeout): slug
+                      calibre_bin, args.timeout): slug
             for slug in slugs
         }
         for fut in concurrent.futures.as_completed(futures):
@@ -159,3 +189,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
