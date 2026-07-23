@@ -17,7 +17,7 @@ class IEEESpectrum(BasicNewsRecipe):
     extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
 
     feeds = [
-        ('IEEE Spectrum', 'https://spectrum.ieee.org/feed'),
+        ('IEEE Spectrum', 'https://spectrum.ieee.org/feeds/feed.rss'),
     ]
 
     # For review: drop for_review/ieee_spectrum.html to bypass live fetch

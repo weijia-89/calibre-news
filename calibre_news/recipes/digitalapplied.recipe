@@ -17,7 +17,7 @@ class DigitalApplied(BasicNewsRecipe):
     extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
 
     feeds = [
-        ('Digital Applied', 'https://www.digitalapplied.com/feed/'),
+        ('Digital Applied', 'https://www.digitalapplied.com/feed.xml'),
     ]
 
     # For review: drop for_review/digitalapplied.html to bypass live fetch
