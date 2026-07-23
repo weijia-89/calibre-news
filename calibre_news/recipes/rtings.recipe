@@ -17,7 +17,8 @@ class RTINGS(BasicNewsRecipe):
     extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
 
     feeds = [
-        ('RTINGS Research', 'https://www.rtings.com/rss-feeds'),
+        ('RTINGS Reviews', 'https://www.rtings.com/reviews.rss'),
+        ('RTINGS TV Reviews', 'https://www.rtings.com/tv/reviews.rss'),
     ]
 
     # For review: drop for_review/rtings.html to bypass live fetch

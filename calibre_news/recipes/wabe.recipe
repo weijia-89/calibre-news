@@ -17,6 +17,7 @@ class WABE(BasicNewsRecipe):
     extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
 
     feeds = [
+        # Note: https://www.wabe.org/feed/ may return 403; try /news/feed/ as fallback
         ('WABE', 'https://www.wabe.org/feed/'),
     ]
 

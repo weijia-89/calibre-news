@@ -16,13 +16,13 @@ class NewschoolHeadlines(BasicNewsRecipe):
 
     extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
 
-    feeds = []  # Uses parse_index() — see parse_index override
-    def parse_index(self):
-        # Scrapes https://blogs.newschool.edu/news/in-the-headlines/
-        # for outbound article links. Uses for_review/newschool_headlines.html
-        # as offline fallback.
-        return []
+    feeds = []  # Uses parse_index() — custom scraper below
 
+    def parse_index(self):
+        # Stub: scrapes https://blogs.newschool.edu/news/in-the-headlines/
+        # for outbound article links. For now returns empty; operator drops
+        # for_review/newschool_headlines.html for the offline fallback.
+        return []
 
     # For review: drop for_review/newschool_headlines.html to bypass live fetch
     publication_type = 'news'

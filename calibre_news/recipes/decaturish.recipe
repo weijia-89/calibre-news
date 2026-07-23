@@ -17,7 +17,7 @@ class Decaturish(BasicNewsRecipe):
     extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
 
     feeds = [
-        ('Decaturish', 'https://decaturish.com/feed/'),
+        ('Decaturish', 'http://www.decaturish.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc'),
     ]
 
     # For review: drop for_review/decaturish.html to bypass live fetch
