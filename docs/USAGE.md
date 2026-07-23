@@ -3,9 +3,8 @@
 ## Prerequisites
 
 - **Python 3.10+**
-- **Calibre** (any version; the orchestrator discovers it via `$PATH` first,
+- **Calibre** (any version; `ebook-convert` discovered via `$PATH` first,
   then falls back to `/Applications/calibre.app/Contents/MacOS/ebook-convert` on macOS)
-- **curl** available on `$PATH`
 
 Verify Calibre is accessible:
 
@@ -14,13 +13,48 @@ Verify Calibre is accessible:
 If that fails, install Calibre from https://calibre-ebook.com or ensure
 `ebook-convert` is on your `$PATH`.
 
+## Installation
+
+Install the package in editable mode to get the `getnews` command:
+
+    pip install -e .
+
+Or with `uv`:
+
+    uv pip install -e .
+
 ## Quick Start
 
-Run the orchestrator from the project root:
+Build all EPUBs:
 
-    python -m calibre_news.orchestrator.main
+    getnews
 
-This reads the site catalog, fetches or loads each site's article HTML, converts it to EPUB via Calibre's `ebook-convert`, and places output under `output/<subject>/<slug>.epub`. A post-pass prunes any EPUB older than 7 days.
+Build a specific subject group:
+
+    getnews --subject tech
+
+Build a single site:
+
+    getnews --slug rtings
+
+Prune old EPUBs (older than 7 days):
+
+    getnews --prune-only
+
+Preview commands without executing:
+
+    getnews --dry-run
+
+Parallelism (default: CPU count):
+
+    getnews --parallel 8
+
+Alternative via Make:
+
+    make              # build all
+    make tech         # build tech subject
+    make prune        # prune old EPUBs
+    make dry-run      # preview
 
 ## Site Catalog
 
@@ -89,9 +123,6 @@ class ExampleSite(BasicNewsRecipe):
     requires_version = (9, 0, 0)
     auto_cleanup = True
 
-    # keep_only_tags = [dict(name='article')]
-    # remove_tags = [dict(name='nav'), dict(name='aside')]
-
     feeds = [
         ('Example Site', 'https://example.com/feed'),
     ]
@@ -121,11 +152,20 @@ When live fetch fails (timeout, paywall, JS-required site, 403), the operator ca
 
     for_review/<slug>.html
 
-The orchestrator checks this path before attempting a live `curl` fetch. If present, the file is used as the source HTML and no network request is made.
+Then run the review command to test the recipe's cleanup settings against real page content:
 
-Optional companion file:
+    python -m calibre_news.for_review <slug> [<html-file>]
 
-    for_review/<slug>.json     — extra notes (DOM hooks, redirect targets)
+If no HTML file is given, defaults to `for_review/<slug>.html`.
+
+The review command:
+1. Copies the site's recipe to `output/review/<slug>.recipe`
+2. Appends a `parse_index()` override that reads the saved HTML and returns it as a single article
+3. Runs `ebook-convert` on the modified recipe
+4. Outputs to `output/review/<slug>.epub`
+5. Cleans up the temporary recipe
+
+This lets you iterate on `keep_only_tags` / `remove_tags` against a real saved page before committing changes to the recipe.
 
 Site-specific grab instructions (from `for_review/README.md`):
 
@@ -146,20 +186,18 @@ All recipes configure Calibre's built-in image resizing:
     scale_news_images = (1264, 1680)
     compress_news_images = True
 
-The orchestrator's `convert_to_epub` wrapper in `utils.py` additionally passes:
+The build script additionally passes:
 
     --output-profile=kindle_oasis
 
 This sets the output profile to Kindle Oasis dimensions, producing EPUB files optimised for that device's screen.
-
-When converting direct HTML (without a recipe), the same scale/compress parameters are forwarded as `extra_args` to `ebook-convert`.
 
 ## Rolling Window
 
 Two mechanisms enforce a 7-day rolling window:
 
 1. **Recipe-level**: `oldest_article = 7` on every `BasicNewsRecipe` subclass tells Calibre to skip articles older than 7 days at fetch time.
-2. **Orchestrator-level**: `_prune_old_epubs()` in `main.py` scans `output/**/*.epub` and deletes any file whose `st_mtime` is older than 7 days. Runs at the end of every full `run()` cycle.
+2. **Build-level**: `prune_old_epubs()` in `build.py` scans `output/**/*.epub` and deletes any file whose `st_mtime` is older than 7 days. Runs at the end of every full `getnews` cycle (unless `--no-prune` is passed).
 
 ## Output Structure
 
@@ -194,19 +232,19 @@ Subject directories are created on first run. The mapping from slug to subject i
 
 ## Adding a New Site
 
-1. **Add to CATALOG.md** — insert the slug under the appropriate subject line in the fenced code block. The orchestrator will not build a site absent from this file.
+1. **Add to CATALOG.md** — insert the slug under the appropriate subject line in the fenced code block. The build will not build a site absent from this file.
 2. **Create recipe stub** — copy an existing `.recipe` file to `calibre_news/recipes/<slug>.recipe`. Update `title` and the class name.
 3. **Fill in the feed URL** — set the `feeds` list with the site's RSS endpoint. If the site has no RSS, implement `parse_index()` (see `newschool_headlines.recipe` for a template).
-4. **Add cleanup rules** — use the `for_review` workflow: drop a saved HTML page at `for_review/<slug>.html`, run the orchestrator, inspect the output, then adjust `keep_only_tags` / `remove_tags` until the article body is clean.
-5. **(Optional) Create meta file** — `recipes/<slug>.meta.yaml` for per-site overrides (e.g. custom `extra_args`, non-default image dimensions). The orchestrator's `_load_recipe_config()` reads this if present.
+4. **Add cleanup rules** — use the `for_review` workflow: drop a saved HTML page at `for_review/<slug>.html`, run the review command, inspect the output, then adjust `keep_only_tags` / `remove_tags` until the article body is clean.
+5. **(Optional) Create meta file** — `recipes/<slug>.meta.yaml` for per-site overrides (e.g. custom `extra_args`, non-default image dimensions). Not yet implemented.
 
 ## Troubleshooting
 
 | Problem | Likely cause | Fix |
 |---------|-------------|-----|
 | `FileNotFoundError: Calibre ebook-convert binary not found` | Calibre not installed or path different | Install Calibre, or symlink `/Applications/calibre.app/Contents/MacOS/ebook-convert` |
-| `curl: (28) Connection timed out` | Site slow or blocking curl | Save the article manually to `for_review/<slug>.html` and re-run |
-| `[WARN] Unable to fetch ...` | Feed URL changed or site down | Check the site's RSS feed URL. Update `feeds` in the recipe. |
+| `ebook-convert` hangs | Site slow or blocking | Save the article manually to `for_review/<slug>.html` and re-run |
+| `[FAIL] Unable to fetch ...` | Feed URL changed or site down | Check the site's RSS feed URL. Update `feeds` in the recipe. |
 | EPUB has navigation/ads in article body | `keep_only_tags` / `remove_tags` not set | Use the `for_review` workflow to identify the correct selectors |
 | `curl: (22) HTTP 404` | Feed URL is stale | Verify the feed URL in a browser. WABE is a known offender — try `/news/feed/` instead of `/feed/`. |
 | `oldest_article` not filtering | Calibre's feed parser date extraction may fail | Set `max_articles_per_feed` as an additional constraint in the recipe |

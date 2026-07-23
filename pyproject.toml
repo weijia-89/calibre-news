@@ -12,6 +12,9 @@ dependencies = []
 [project.optional-dependencies]
 test = ["pytest"]
 
+[project.scripts]
+getnews = "calibre_news.cli:main"
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
