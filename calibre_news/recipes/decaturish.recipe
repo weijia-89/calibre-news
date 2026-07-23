@@ -2,6 +2,7 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 class Decaturish(BasicNewsRecipe):
     title = 'Decaturish'
+    description = 'Local news for Decatur, GA.'
     oldest_article = 7
     compress_news_images = True
     scale_news_images = (1264, 1680)
@@ -10,11 +11,14 @@ class Decaturish(BasicNewsRecipe):
     auto_cleanup = True
 
     # keep_only_tags = []
-    # remove_tags = []
 
-    # FIXME: verify RSS URL (TownNews BLOX CMS)
+    remove_tags = [{'name': 'nav'}, {'name': 'header', 'attrs': {'class': 'site-header'}}, {'name': 'footer'}, {'name': 'aside'}, {'class_': 'sidebar'}, {'class_': 'advertisement'}, {'class_': 'ad'}, {'class_': 'social-share'}, {'id': 'comments'}, {'class_': 'comments'}, {'class_': 'related-posts'}]
+
+    extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
+
     feeds = [
         ('Decaturish', 'http://www.decaturish.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc'),
     ]
 
-    # For review: open the generated .html with `open decaturish/for_review.html`
+    # For review: drop for_review/decaturish.html to bypass live fetch
+    publication_type = 'news'

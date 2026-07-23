@@ -93,6 +93,27 @@ def test_recipe_attributes():
         assert instance.compress_news_images is True, f"{slug}: compress_news_images mismatch"
         assert instance.scale_news_images == (1264, 1680), f"{slug}: scale_news_images mismatch"
         assert instance.language == "en", f"{slug}: language mismatch"
+        assert isinstance(instance.description, str) and len(instance.description) > 0, f"{slug}: description empty or missing"
+        assert hasattr(instance, "publication_type"), f"{slug}: missing publication_type"
+        assert hasattr(instance, "extra_css"), f"{slug}: missing extra_css"
+        assert instance.auto_cleanup is True, f"{slug}: auto_cleanup should be True"
+        assert instance.requires_version is not None, f"{slug}: missing requires_version"
+
+
+def test_feeds_non_empty_except_parse_index():
+    for rp in _recipe_files():
+        slug = _slug_from_path(rp)
+        if slug == "newschool_headlines":
+            continue  # uses parse_index()
+        mod = _import_recipe(slug)
+        cls = _find_recipe_class(mod)
+        instance = cls()
+        assert instance.feeds is not None, f"{slug}: feeds should not be None"
+        if isinstance(instance.feeds, list):
+            assert len(instance.feeds) > 0, f"{slug}: feeds list is empty"
+            for label, url in instance.feeds:
+                assert isinstance(label, str) and len(label) > 0, f"{slug}: feed label empty"
+                assert url.startswith("http"), f"{slug}: feed URL doesn't start with http: {url}"
 
 
 def test_catalog_matches_recipes():

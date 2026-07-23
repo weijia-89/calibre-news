@@ -33,7 +33,7 @@ This reads the site catalog, fetches or loads each site's article HTML, converts
 | `digitalapplied` | Digital Applied | `https://digitalapplied.com/feed` |
 | `ieee_spectrum` | IEEE Spectrum | `https://spectrum.ieee.org/feed` |
 | `techspot` | TechSpot | `https://www.techspot.com/feed` |
-| `rtings` | RTINGS | `https://www.rtings.com/feed` |
+| `rtings` | RTINGS | `https://www.rtings.com/reviews.rss` + `tv/reviews.rss` |
 | `chipsandcheese` | Chips and Cheese | `https://chipsandcheese.com/feed` |
 | `hwcooling` | HWCooling | `https://hwcooling.net/feed` |
 
@@ -41,16 +41,16 @@ This reads the site catalog, fetches or loads each site's article HTML, converts
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
-| `cats` | Cats | TBD — feed not yet configured |
-| `consumerlab` | ConsumerLab | TBD — feed not yet configured |
+| `cats` | Cats | `https://cats.com/feed/` |
+| `consumerlab` | ConsumerLab | `https://www.consumerlab.com/feed/` |
 
 ### Security (3)
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
-| `cyberscoop` | CyberScoop | TBD — feed not yet configured |
-| `darkreading` | DarkReading | TBD — feed not yet configured |
-| `schneier` | Schneier on Security | TBD — feed not yet configured |
+| `cyberscoop` | CyberScoop | `https://cyberscoop.com/feed/` |
+| `darkreading` | Dark Reading | `https://www.darkreading.com/rss.xml` |
+| `schneier` | Schneier on Security | `https://www.schneier.com/feed/` |
 
 ### Local — Atlanta Metro (5)
 
@@ -59,16 +59,16 @@ This reads the site catalog, fetches or loads each site's article HTML, converts
 | `285south` | 285 South | `https://285south.com/feed/` |
 | `saportareport` | SaportaReport | `https://saportareport.com/feed/` |
 | `decaturish` | Decaturish | `http://www.decaturish.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc` |
-| `atlpresscollective` | Atlanta Community Press Collective | TBD — feed not yet configured |
+| `atlpresscollective` | Atlanta Community Press Collective | `https://atlpresscollective.com/feed/` |
 | `wabe` | WABE | `https://www.wabe.org/feed/` (may return 404 — try `/news/feed/`) |
 
 ### News (4)
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
-| `npr` | NPR | TBD — feed not yet configured |
-| `truthout` | Truthout | TBD — feed not yet configured |
-| `globaldev` | Guardian Global Development | TBD — feed not yet configured |
+| `npr` | NPR | `https://feeds.npr.org/1001/rss.xml` |
+| `truthout` | Truthout | `https://truthout.org/feed/` |
+| `globaldev` | Guardian Global Dev | `https://www.theguardian.com/global-development/rss` |
 | `newschool_headlines` | The New School — In the Headlines | No RSS — uses `parse_index()` to scrape link-roll page |
 
 Note: `newschool_headlines` produces an EPUB under the `news` subject directory despite being its own recipe.

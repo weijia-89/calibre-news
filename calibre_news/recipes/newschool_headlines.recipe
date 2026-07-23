@@ -1,7 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class NewschoolHeadlines(BasicNewsRecipe):
-    title = 'The New School — In the Headlines'
+    title = 'In the Headlines'
+    description = 'New School link roll.'
     oldest_article = 7
     compress_news_images = True
     scale_news_images = (1264, 1680)
@@ -10,31 +11,18 @@ class NewschoolHeadlines(BasicNewsRecipe):
     auto_cleanup = True
 
     # keep_only_tags = []
-    # remove_tags = []
 
-    # No RSS feed — this site is a link-roll page that aggregates
-    # outbound article links from New School-affiliated faculty/students.
-    # Use parse_index() to scrape https://blogs.newschool.edu/news/in-the-headlines/
-    # for article URLs, titles, and descriptions.
-    feeds = []
+    remove_tags = [{'name': 'nav'}, {'name': 'header', 'attrs': {'class': 'site-header'}}, {'name': 'footer'}, {'name': 'aside'}, {'class_': 'sidebar'}, {'class_': 'advertisement'}, {'class_': 'ad'}, {'class_': 'social-share'}, {'id': 'comments'}, {'class_': 'comments'}, {'class_': 'related-posts'}]
 
-    # For review: open the generated .html with `open newschool_headlines/for_review.html`
+    extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
+
+    feeds = []  # Uses parse_index() — custom scraper below
 
     def parse_index(self):
-        """
-        Stub: scrape https://blogs.newschool.edu/news/in-the-headlines/ for
-        outbound article links. The page is a headline link roll (not RSS),
-        so this method should extract each linked article's URL, title, and
-        a summary/description, then return a list of feeds in Calibre format:
-
-            [
-                ('In the Headlines', [
-                    {'title': ..., 'url': ..., 'description': ..., 'date': ...},
-                ]),
-            ]
-
-        The `for_review` offline fallback should be used to debug parsing:
-        save a local copy of the page, place it at
-        newschool_headlines/for_review.html, and iterate here.
-        """
+        # Stub: scrapes https://blogs.newschool.edu/news/in-the-headlines/
+        # for outbound article links. For now returns empty; operator drops
+        # for_review/newschool_headlines.html for the offline fallback.
         return []
+
+    # For review: drop for_review/newschool_headlines.html to bypass live fetch
+    publication_type = 'news'
