@@ -13,6 +13,22 @@ import pytest
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 
+def _patch_catalog(text):
+    """Helper: patch Path.read_text on the CATALOG_PATH to return ``text``.
+
+    Python ≥3.14 makes ``PosixPath.read_text`` read-only; ``patch.object``
+    on an instance attribute fails.  We mock the *class* method.
+    """
+    from calibre_news.build import CATALOG_PATH
+    from pathlib import Path as PathCls
+
+    def _fake_read_text(self, encoding=None):
+        _ = self  # unused — return the fixture text regardless of which Path
+        return text
+
+    return patch.object(PathCls, "read_text", _fake_read_text), CATALOG_PATH
+
+
 @pytest.fixture
 def reset_sys_modules():
     """Ensure calibre_news modules are clean between tests."""
@@ -35,7 +51,6 @@ class TestCatalogParsing:
         assert "security" in subject_map
         assert "local" in subject_map
         assert "news" in subject_map
-        # Subject slug counts
         assert len(subject_map["tech"]) == 6
         assert len(subject_map["consumer"]) == 2
         assert len(subject_map["security"]) == 3
@@ -52,6 +67,33 @@ class TestCatalogParsing:
         for slugs in subject_map.values():
             reconstructed.extend(slugs)
         assert ordered == reconstructed
+
+    def test_load_catalog_rejects_unknown_subject(self):
+        """Malformed catalog with unknown subject raises ValueError."""
+        from calibre_news.build import load_catalog
+
+        mock, _ = _patch_catalog("```\nunknown_subj : slug1\n```")
+        with mock:
+            with pytest.raises(ValueError, match="unknown subject"):
+                load_catalog()
+
+    def test_load_catalog_rejects_empty_slugs(self):
+        """Subject line with no slugs raises ValueError."""
+        from calibre_news.build import load_catalog
+
+        mock, _ = _patch_catalog("```\ntech :\n```")
+        with mock:
+            with pytest.raises(ValueError, match="has no slugs"):
+                load_catalog()
+
+    def test_load_catalog_rejects_empty(self):
+        """Catalog with zero subjects raises ValueError."""
+        from calibre_news.build import load_catalog
+
+        mock, _ = _patch_catalog("```\n```")
+        with mock:
+            with pytest.raises(ValueError, match="parsed empty"):
+                load_catalog()
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +219,16 @@ class TestExitCodes:
                     with pytest.raises(SystemExit) as exc_info:
                         main()
                     assert exc_info.value.code == 1
+
+    def test_prune_only_wins_over_no_prune(self):
+        """When both --prune-only and --no-prune, --prune-only wins (no build)."""
+        from calibre_news.build import main
+
+        # Patch prune_old_epubs to be a no-op so we don't touch real files
+        with patch("sys.argv", ["getnews", "--prune-only", "--no-prune"]):
+            with patch("calibre_news.build.prune_old_epubs"):
+                # Should NOT call load_catalog or find_ebook_convert — returns early
+                main()  # no SystemExit = prune_only short-circuited correctly
 
 
 # ---------------------------------------------------------------------------

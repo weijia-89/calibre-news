@@ -18,12 +18,31 @@ from ._calibre import find_ebook_convert, OUTPUT_PROFILE, PRUNE_DAYS
 CATALOG_PATH = Path(__file__).resolve().parents[1] / "docs" / "CATALOG.md"
 RECIPES_DIR = Path(__file__).resolve().parent / "recipes"
 OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "output"
+VALID_SUBJECTS = frozenset({"tech", "consumer", "security", "local", "news"})
+
+
+def _extension_from_line(line: str) -> tuple[str, list[str]]:
+    """Parse a CATALOG.md data line: ``subject : slug, slug, ...``.
+
+    Raises ``ValueError`` if the subject is not in the locked taxonomy.
+    """
+    if ":" not in line:
+        raise ValueError("catalog line missing colon")
+    subject, slugs = line.split(":", 1)
+    subject = subject.strip()
+    if subject not in VALID_SUBJECTS:
+        raise ValueError(f"unknown subject in catalog: {subject!r}")
+    slugs_list = [s.strip() for s in slugs.split(",") if s.strip()]
+    if not slugs_list:
+        raise ValueError(f"subject {subject!r} has no slugs")
+    return subject, slugs_list
 
 
 def load_catalog():
     """Parse the CATALOG.md file.
 
     Returns a tuple of (subject_to_slugs, ordered_slugs).
+    Raises ``ValueError`` on malformed input.
     """
     subject_to_slugs: dict[str, list[str]] = {}
     ordered_slugs: list[str] = []
@@ -34,13 +53,16 @@ def load_catalog():
             continue
         if not in_block:
             continue
-        if ":" not in line:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
             continue
-        subject, slugs = line.split(":", 1)
-        subject = subject.strip()
-        slugs_list = [s.strip() for s in slugs.split(",") if s.strip()]
+        subject, slugs_list = _extension_from_line(line)
+        if subject in subject_to_slugs:
+            raise ValueError(f"duplicate subject in catalog: {subject!r}")
         subject_to_slugs[subject] = slugs_list
         ordered_slugs.extend(slugs_list)
+    if not subject_to_slugs:
+        raise ValueError("catalog parsed empty — no subject entries found")
     return subject_to_slugs, ordered_slugs
 
 
@@ -101,7 +123,11 @@ def main():
         prune_old_epubs()
         return
 
-    subject_to_slugs, ordered_slugs = load_catalog()
+    try:
+        subject_to_slugs, ordered_slugs = load_catalog()
+    except (ValueError, FileNotFoundError, OSError) as e:
+        print(f"Catalog error: {e}", file=sys.stderr)
+        sys.exit(2)    
 
     # Filter by subject
     if args.subject:
@@ -163,3 +189,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
