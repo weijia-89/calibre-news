@@ -2,6 +2,7 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 class TechSpot(BasicNewsRecipe):
     title = 'TechSpot'
+    description = 'PC hardware, software, and tech news.'
     oldest_article = 7
     compress_news_images = True
     scale_news_images = (1264, 1680)
@@ -10,11 +11,14 @@ class TechSpot(BasicNewsRecipe):
     auto_cleanup = True
 
     # keep_only_tags = []
-    # remove_tags = []
 
-    # FIXME: find RSS feed URL
+    remove_tags = [{'name': 'nav'}, {'name': 'header', 'attrs': {'class': 'site-header'}}, {'name': 'footer'}, {'name': 'aside'}, {'class_': 'sidebar'}, {'class_': 'advertisement'}, {'class_': 'ad'}, {'class_': 'social-share'}, {'id': 'comments'}, {'class_': 'comments'}, {'class_': 'related-posts'}]
+
+    extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
+
     feeds = [
         ('TechSpot', 'https://www.techspot.com/feed'),
     ]
 
-    # For review: open the generated .html with `open <slug>/for_review.html`
+    # For review: drop for_review/techspot.html to bypass live fetch
+    publication_type = 'blog'

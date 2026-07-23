@@ -2,6 +2,7 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 class GlobalDev(BasicNewsRecipe):
     title = 'Global Development'
+    description = 'Global development and human interest.'
     oldest_article = 7
     compress_news_images = True
     scale_news_images = (1264, 1680)
@@ -10,11 +11,14 @@ class GlobalDev(BasicNewsRecipe):
     auto_cleanup = True
 
     # keep_only_tags = []
-    # remove_tags = []
 
-    # FIXME: verify RSS feed URL (Guardian Global Development)
+    remove_tags = [{'name': 'nav'}, {'name': 'header', 'attrs': {'class': 'site-header'}}, {'name': 'footer'}, {'name': 'aside'}, {'class_': 'sidebar'}, {'class_': 'advertisement'}, {'class_': 'ad'}, {'class_': 'social-share'}, {'id': 'comments'}, {'class_': 'comments'}, {'class_': 'related-posts'}]
+
+    extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
+
     feeds = [
-        # ('Global Development', 'https://www.theguardian.com/global-development/rss'),
+        ('Global Development', 'https://www.theguardian.com/global-development/rss'),
     ]
 
-    # For review: open the generated .html with `open globaldev/for_review.html`
+    # For review: drop for_review/globaldev.html to bypass live fetch
+    publication_type = 'news'
