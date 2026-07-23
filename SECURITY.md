@@ -11,7 +11,7 @@ Security fixes are backported to the current minor version only. Upgrade via `gi
 
 ## Reporting a Vulnerability
 
-Email `wei.jia [at] example.com` with the subject `calibre-news security`. Expect acknowledgement within 48 hours and a resolution timeline within 7 days. Do not open public issues for undisclosed vulnerabilities.
+Email `wei@jia.mozmail.com` with the subject `calibre-news security`. Expect acknowledgement within 48 hours and a resolution timeline within 7 days. Do not open public issues for undisclosed vulnerabilities.
 
 ## Threat Model
 
