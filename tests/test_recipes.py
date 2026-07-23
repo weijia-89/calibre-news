@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from calibre_news.orchestrator.utils import load_catalog
-from calibre_news.orchestrator.main import RECIPES_DIR
+from calibre_news.build import load_catalog
+from calibre_news.build import RECIPES_DIR
 
 # ---------------------------------------------------------------------------
 # Mock the calibre module hierarchy so recipe files can be imported without
@@ -100,17 +100,17 @@ def test_recipe_attributes():
         assert instance.requires_version is not None, f"{slug}: missing requires_version"
 
 
-def test_feeds_non_empty_except_parse_index():
+def test_feeds_or_parse_index_present():
     for rp in _recipe_files():
         slug = _slug_from_path(rp)
-        if slug == "newschool_headlines":
-            continue  # uses parse_index()
         mod = _import_recipe(slug)
         cls = _find_recipe_class(mod)
         instance = cls()
-        assert instance.feeds is not None, f"{slug}: feeds should not be None"
-        if isinstance(instance.feeds, list):
-            assert len(instance.feeds) > 0, f"{slug}: feeds list is empty"
+        has_feeds = isinstance(instance.feeds, (list, tuple)) and len(instance.feeds) > 0
+        has_parse_index = callable(getattr(instance, "parse_index", None))
+        assert has_feeds or has_parse_index, \
+            f"{slug}: must have non-empty feeds or a parse_index() method"
+        if has_feeds:
             for label, url in instance.feeds:
                 assert isinstance(label, str) and len(label) > 0, f"{slug}: feed label empty"
                 assert url.startswith("http"), f"{slug}: feed URL doesn't start with http: {url}"
