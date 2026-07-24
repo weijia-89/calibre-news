@@ -182,11 +182,100 @@ class TestPruning:
         assert epub_new.exists()
 
 
+class _MockExecutor:
+    """Inline executor for testing ProcessPoolExecutor code without forks."""
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        pass
+
+    def submit(self, fn, *args, **kwargs):
+        from concurrent.futures import Future
+
+        f = Future()
+        try:
+            result = fn(*args, **kwargs)
+            f.set_result(result)
+        except Exception as e:
+            f.set_exception(e)
+        return f
+
+
 # ---------------------------------------------------------------------------
-# exit-code tests
+# build filtering tests
 # ---------------------------------------------------------------------------
 
+class TestBuildFiltering:
+
+    def test_subject_filter_only_builds_one_subject(self):
+        """--subject tech calls ebook-convert exactly 5 times, not all 16."""
+        from calibre_news.build import main
+        import subprocess
+
+        call_count = 0
+
+        def counting_run(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return MagicMock()
+
+        with patch("sys.argv", ["getnews", "--subject", "tech"]):
+            with patch(
+                "calibre_news.build.find_ebook_convert",
+                return_value=Path("/fake/ebook-convert"),
+            ):
+                with patch.object(subprocess, "run", side_effect=counting_run):
+                    with patch(
+                        "concurrent.futures.ProcessPoolExecutor", _MockExecutor
+                    ):
+                        main()
+
+        assert call_count == 5, f"Expected 5 calls for tech, got {call_count}"
+
+    def test_slug_filter_only_builds_one_site(self):
+        """--slug rtings calls ebook-convert exactly 1 time."""
+        from calibre_news.build import main
+        import subprocess
+
+        call_count = 0
+
+        def counting_run(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return MagicMock()
+
+        with patch("sys.argv", ["getnews", "--slug", "rtings"]):
+            with patch(
+                "calibre_news.build.find_ebook_convert",
+                return_value=Path("/fake/ebook-convert"),
+            ):
+                with patch.object(subprocess, "run", side_effect=counting_run):
+                    with patch(
+                        "concurrent.futures.ProcessPoolExecutor", _MockExecutor
+                    ):
+                        main()
+
+        assert call_count == 1, f"Expected 1 call for rtings, got {call_count}"
+
 class TestExitCodes:
+
+    def test_exit_code_on_config_error(self):
+        """Missing CATALOG.md causes exit code 2."""
+        from calibre_news.build import main
+
+        with patch("sys.argv", ["getnews"]):
+            with patch(
+                "calibre_news.build.CATALOG_PATH",
+                Path("/nonexistent/catalog.md"),
+            ):
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 2
 
     def test_invalid_subject_exits_2(self):
         """Unknown --subject gives exit code 2."""
@@ -244,6 +333,89 @@ class TestForReview:
         if review_dir.exists():
             for f in review_dir.glob("*.recipe"):
                 f.unlink()
+
+    def test_for_review_generates_valid_overlay_recipe(self, tmp_path):
+        """for_review creates a recipe with parse_index() and cleans up on failure."""
+        from calibre_news.for_review import main, FOR_REVIEW_DIR, OUTPUT_ROOT
+        import subprocess
+
+        html_file = tmp_path / "rtings.html"
+        html_file.write_text(
+            "<html><head><title>Test RTINGS</title></head><body>Test</body></html>"
+        )
+
+        captured_recipe = None
+        temp_recipe_path = None
+
+        def capture_and_fail(cmd, **kwargs):
+            nonlocal captured_recipe, temp_recipe_path
+            temp_recipe_path = Path(cmd[1])
+            captured_recipe = temp_recipe_path.read_text()
+            raise subprocess.CalledProcessError(1, cmd, stderr="fake fail")
+
+        try:
+            with patch("sys.argv", ["for_review", "rtings"]):
+                with patch(
+                    "calibre_news.for_review.find_ebook_convert",
+                    return_value=Path("/fake/ebook-convert"),
+                ):
+                    with patch("calibre_news.for_review.FOR_REVIEW_DIR", tmp_path):
+                        with patch.object(
+                            subprocess, "run", side_effect=capture_and_fail
+                        ):
+                            with pytest.raises(SystemExit) as exc_info:
+                                main()
+                            assert exc_info.value.code == 1
+
+            assert captured_recipe is not None
+            assert "def parse_index(self)" in captured_recipe
+            assert "feeds = []" in captured_recipe
+            assert "for_review overrides" in captured_recipe
+            # Temp file should be cleaned up even when ebook-convert fails
+            assert not temp_recipe_path.exists()
+        finally:
+            review_epub = OUTPUT_ROOT / "review" / "rtings.epub"
+            if review_epub.exists():
+                review_epub.unlink()
+
+    def test_for_review_inherits_cleanup_settings(self, tmp_path):
+        """Generated recipe preserves remove_tags, scale_news_images, compress_news_images."""
+        from calibre_news.for_review import main, FOR_REVIEW_DIR, OUTPUT_ROOT
+        import subprocess
+
+        html_file = tmp_path / "rtings.html"
+        html_file.write_text(
+            "<html><head><title>Test</title></head><body>Test</body></html>"
+        )
+
+        captured_recipe = None
+
+        def capture_run(cmd, **kwargs):
+            nonlocal captured_recipe
+            recipe_path = Path(cmd[1])
+            captured_recipe = recipe_path.read_text()
+            return MagicMock()
+
+        try:
+            with patch("sys.argv", ["for_review", "rtings"]):
+                with patch(
+                    "calibre_news.for_review.find_ebook_convert",
+                    return_value=Path("/fake/ebook-convert"),
+                ):
+                    with patch("calibre_news.for_review.FOR_REVIEW_DIR", tmp_path):
+                        with patch.object(
+                            subprocess, "run", side_effect=capture_run
+                        ):
+                            main()
+
+            assert captured_recipe is not None
+            assert "remove_tags = [" in captured_recipe
+            assert "scale_news_images = (1264, 1680)" in captured_recipe
+            assert "compress_news_images = True" in captured_recipe
+        finally:
+            review_epub = OUTPUT_ROOT / "review" / "rtings.epub"
+            if review_epub.exists():
+                review_epub.unlink()
 
     def test_missing_recipe_exits_2(self):
         """When slug has no recipe, exit code 2."""
