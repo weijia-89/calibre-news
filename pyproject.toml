@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "beautifulsoup4"]
 
 [project.scripts]
 getnews = "calibre_news.cli:main"

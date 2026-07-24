@@ -19,10 +19,57 @@ class NewschoolHeadlines(BasicNewsRecipe):
     feeds = []  # Uses parse_index() — custom scraper below
 
     def parse_index(self):
-        # Stub: scrapes https://blogs.newschool.edu/news/in-the-headlines/
-        # for outbound article links. For now returns empty; operator drops
-        # for_review/newschool_headlines.html for the offline fallback.
-        return []
+        """Scrape https://blogs.newschool.edu/news/in-the-headlines/ for outbound article links.
+
+        Falls back to for_review/newschool_headlines.html if the live page is unreachable.
+        Returns: [(section_name, [article_dict, ...]), ...]
+        """
+        import sys
+        import urllib.request
+        from pathlib import Path
+
+        url = 'https://blogs.newschool.edu/news/in-the-headlines/'
+
+        # Possible fallback locations (relative to CWD or the running script)
+        fallback_paths = [
+            Path('for_review') / 'newschool_headlines.html',
+            Path(sys.argv[0]).parent / 'for_review' / 'newschool_headlines.html',
+        ]
+
+        # Try live fetch first; fall back to saved HTML on any failure
+        html = None
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                html = response.read()
+        except Exception:
+            for fallback in fallback_paths:
+                if fallback.exists():
+                    html = fallback.read_bytes()
+                    break
+
+        if not html:
+            return []
+
+        # Calibre provides BeautifulSoup via calibre.ebooks.BeautifulSoup; fall back to bs4 for tests
+        try:
+            from calibre.ebooks.BeautifulSoup import BeautifulSoup
+        except Exception:
+            from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(html, 'html.parser')
+        content = soup.find('div', class_='entry-contentf')
+        if not content:
+            return []
+
+        articles = []
+        for link in content.find_all('a', class_='a-blockLink', href=True):
+            title_tag = link.find('h4', class_='a-blockLink__title')
+            title = title_tag.get_text(strip=True) if title_tag else link.get_text(strip=True)
+            href = link['href']
+            if title and href.startswith('http'):
+                articles.append({'title': title, 'url': href})
+
+        return [('In the Headlines', articles)] if articles else []
 
     # For review: drop for_review/newschool_headlines.html to bypass live fetch
     publication_type = 'news'
