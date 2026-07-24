@@ -17,7 +17,7 @@ class HWCooling(BasicNewsRecipe):
     extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
 
     feeds = [
-        ('HWCooling', 'https://hwcooling.net/feed/'),
+        ('HWCooling', 'https://www.hwcooling.net/en/feed/'),
     ]
 
     # For review: drop for_review/hwcooling.html to bypass live fetch
