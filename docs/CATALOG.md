@@ -3,10 +3,10 @@
 Subject taxonomy (locked):
 
 ```
-tech      : digitalapplied, ieee_spectrum, techspot, rtings, chipsandcheese, hwcooling
-consumer  : cats, consumerlab
+tech      : digitalapplied, ieee_spectrum, rtings, chipsandcheese, hwcooling
+consumer  : cats
 security  : cyberscoop, darkreading, schneier
-local     : 285south, saportareport, decaturish, atlpresscollective, wabe
+local     : 285south, saportareport, atlpresscollective
 news      : npr, truthout, globaldev, newschool_headlines
 ```
 

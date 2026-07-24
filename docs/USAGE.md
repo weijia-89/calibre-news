@@ -58,25 +58,23 @@ Alternative via Make:
 
 ## Site Catalog
 
-20 sites in 5 subject groups, defined in `docs/CATALOG.md` (the single source of truth  -  no recipe is built for a slug absent from this file).
+16 sites in 5 subject groups, defined in `docs/CATALOG.md` (the single source of truth - no recipe is built for a slug absent from this file).
 
-### Tech (6)
+### Tech (5)
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
-| `digitalapplied` | Digital Applied | `https://digitalapplied.com/feed` |
-| `ieee_spectrum` | IEEE Spectrum | `https://spectrum.ieee.org/feed` |
-| `techspot` | TechSpot | `https://www.techspot.com/feed` |
-| `rtings` | RTINGS | `https://www.rtings.com/reviews.rss` + `tv/reviews.rss` |
+| `digitalapplied` | Digital Applied | `https://www.digitalapplied.com/feed.xml` |
+| `ieee_spectrum` | IEEE Spectrum | `https://spectrum.ieee.org/feeds/feed.rss` |
+| `rtings` | RTINGS | `https://www.rtings.com/latest-rss.xml` |
 | `chipsandcheese` | Chips and Cheese | `https://chipsandcheese.com/feed` |
-| `hwcooling` | HWCooling | `https://hwcooling.net/feed` |
+| `hwcooling` | HWCooling | `https://www.hwcooling.net/en/feed/` |
 
-### Consumer (2)
+### Consumer (1)
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
 | `cats` | Cats | `https://cats.com/feed/` |
-| `consumerlab` | ConsumerLab | `https://www.consumerlab.com/feed/` |
 
 ### Security (3)
 
@@ -86,15 +84,13 @@ Alternative via Make:
 | `darkreading` | Dark Reading | `https://www.darkreading.com/rss.xml` |
 | `schneier` | Schneier on Security | `https://www.schneier.com/feed/` |
 
-### Local  -  Atlanta Metro (5)
+### Local - Atlanta Metro (3)
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
 | `285south` | 285 South | `https://285south.com/feed/` |
 | `saportareport` | SaportaReport | `https://saportareport.com/feed/` |
-| `decaturish` | Decaturish | `http://www.decaturish.com/search/?f=rss&t=article&l=50&s=start_time&sd=desc` |
 | `atlpresscollective` | Atlanta Community Press Collective | `https://atlpresscollective.com/feed/` |
-| `wabe` | WABE | `https://www.wabe.org/feed/` (may return 404  -  try `/news/feed/`) |
 
 ### News (4)
 

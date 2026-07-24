@@ -42,7 +42,7 @@ def reset_sys_modules():
 class TestCatalogParsing:
 
     def test_load_catalog_expected_shape(self):
-        """Parse real CATALOG.md, assert 5 subjects and 20 slugs."""
+        """Parse real CATALOG.md, assert 5 subjects and 16 slugs."""
         from calibre_news.build import load_catalog
 
         subject_map, ordered = load_catalog()
@@ -51,12 +51,12 @@ class TestCatalogParsing:
         assert "security" in subject_map
         assert "local" in subject_map
         assert "news" in subject_map
-        assert len(subject_map["tech"]) == 6
-        assert len(subject_map["consumer"]) == 2
+        assert len(subject_map["tech"]) == 5
+        assert len(subject_map["consumer"]) == 1
         assert len(subject_map["security"]) == 3
-        assert len(subject_map["local"]) == 5
+        assert len(subject_map["local"]) == 3
         assert len(subject_map["news"]) == 4
-        assert len(ordered) == 20
+        assert len(ordered) == 16
 
     def test_load_catalog_ordered_consistent(self):
         """Ordered list matches concatenation of subject lists."""

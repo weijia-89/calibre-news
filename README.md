@@ -1,12 +1,12 @@
 # calibre-news
 
-Calibre-based news aggregator  -  20 site recipes, one build command, EPUBs grouped by subject for Kindle Oasis.
+Calibre-based news aggregator - 16 site recipes, one build command, EPUBs grouped by subject for Kindle Oasis.
 
 ## Quick start
 
 ```bash
 pip install -e .
-getnews                  # build all 20 EPUBs
+getnews                  # build all 16 EPUBs
 getnews --subject tech   # build just the tech subject
 getnews --prune-only     # clean EPUBs older than 7 days
 ```
@@ -84,7 +84,7 @@ calibre_news/
   build.py         -  daily build driver with parallel execution
   for_review.py    -  stub-based review workflow
   cli.py           -  getnews entry point
-  recipes/         -  20 Calibre BasicNewsRecipe files
+  recipes/        - 16 Calibre BasicNewsRecipe files
 docs/
   CATALOG.md       -  subject/slug mapping (source of truth)
   USAGE.md         -  full usage guide
