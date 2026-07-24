@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-07-23
 
-### Added (v0.2.0 - `feat/recipe-feed-upgrades`)
+### Added
 
 - **`getnews` console script.** Single command builds all 16 site EPUBs grouped by subject. Installed via `pip install -e .` as `getnews`, backed by `calibre_news.cli:main` in `pyproject.toml`.
 - **Calibre-native conversion.** The old Python orchestrator is gone. `build.py` calls `ebook-convert` directly on `.recipe` files. Calibre handles RSS fetching, image resizing (1264×1680, Kindle Oasis profile), article-age filtering, and HTML cleanup. No curl, no temp HTML, no manual fetch logic.
@@ -16,12 +16,12 @@
 - **ADR-001** accepted. Architecture Decision Record tracks the orchestrator removal and Calibre-native rationale.
 - **README, USAGE.md, CHANGELOG.md, SECURITY.md.** User-facing docs match shipped CLI surface.
 
-### Removed (v0.2.0)
+### Removed
 
 - `calibre_news/orchestrator/` directory. All fetch logic replaced by Calibre's built-in RSS handling via `.recipe` files.
 - `tests/test_orchestrator.py`, `tests/test_utils.py`. Replaced by `tests/test_build.py` with catalog, exit-code, prune, dry-run, and for_review tests.
 
-### Fixed (v0.2.0)
+### Fixed
 
 - `find_ebook_convert()` is called once in `main()` before the executor starts. If Calibre is missing, exit 2 happens immediately, not per-worker inside the process pool.
 - `for_review.py` recipe mutation now runs inside `tempfile.TemporaryDirectory`, never inside `output/review/`.
