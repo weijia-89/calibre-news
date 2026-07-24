@@ -123,3 +123,49 @@ def test_catalog_matches_recipes():
         assert slug in recipe_slugs, f"{slug} in CATALOG.md but no .recipe file found"
     for slug in recipe_slugs:
         assert slug in catalog, f"{slug}.recipe exists but no entry in CATALOG.md"
+
+
+# ---------------------------------------------------------------------------
+# parse_index() tests
+# ---------------------------------------------------------------------------
+
+class TestParseIndex:
+    """Test parse_index() on recipes that use custom scraping."""
+
+    def test_newschool_headlines_parse_index(self):
+        """newschool_headlines.parse_index() returns non-empty article list from fixture HTML."""
+        import urllib.request
+        from io import BytesIO
+        from unittest.mock import patch
+
+        slug = "newschool_headlines"
+        mod = _import_recipe(slug)
+        cls = _find_recipe_class(mod)
+        instance = cls()
+
+        # Load fixture HTML
+        fixture_path = Path(__file__).resolve().parents[1] / "for_review" / f"{slug}.html"
+        fixture_html = fixture_path.read_bytes()
+
+        # Patch urlopen so the recipe reads the fixture instead of fetching live
+        def _fake_urlopen(url, *args, **kwargs):
+            return BytesIO(fixture_html)
+
+        with patch.object(urllib.request, "urlopen", _fake_urlopen):
+            result = instance.parse_index()
+
+        assert isinstance(result, list), f"{slug}: parse_index() must return a list"
+        assert len(result) > 0, f"{slug}: parse_index() returned empty list"
+
+        # Structure: [(section_name, [article_dict, ...]), ...]
+        section_name, articles = result[0]
+        assert isinstance(section_name, str) and len(section_name) > 0, f"{slug}: section name empty"
+        assert isinstance(articles, list) and len(articles) > 0, f"{slug}: articles list empty"
+
+        # Verify first article has title and url
+        first = articles[0]
+        assert isinstance(first, dict), f"{slug}: article must be dict"
+        assert "title" in first and isinstance(first["title"], str) and len(first["title"]) > 0, \
+            f"{slug}: article missing title"
+        assert "url" in first and first["url"].startswith("http"), \
+            f"{slug}: article missing valid url"
