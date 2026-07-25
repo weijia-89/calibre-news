@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0] - 2026-07-24
+
+### Added
+
+- **Calibre-compatible metadata** on every recipe. Each `.recipe` file now sets `author` (site/publisher name, e.g. `NPR`, `IEEE Spectrum`) and `tags` (subject category, e.g. `['tech']`, `['news']`). This metadata is embedded in generated EPUBs and readable by Calibre and e-book readers.
+
+### Changed
+
+- **Flat output structure.** EPUBs are now written directly to `output/<slug>.epub` instead of `output/<subject>/<slug>.epub`. Subject subdirectories are no longer created. Pruning scans the flat `output/` directory.
+- **for_review workflow** outputs to flat `output/<slug>.epub` instead of `output/review/<slug>.epub`.
+
+### Removed
+
+- **`digitalapplied` and `rtings`** removed from the catalog and recipe set. `rtings` uses client-side JavaScript rendering that Calibre's `auto_cleanup` cannot extract. `digitalapplied` had similar extraction issues. Both recipe files deleted; 14 sites remain.
+
 ## [0.2.0] - 2026-07-23
 
 ### Added

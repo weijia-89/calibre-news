@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class Schneier(BasicNewsRecipe):
+    tags = ['security']
+    author = 'Schneier on Security'
     title = 'Schneier on Security'
     description = 'Security and privacy commentary.'
     oldest_article = 7

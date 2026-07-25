@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class NPR(BasicNewsRecipe):
+    tags = ['news']
+    author = 'NPR'
     title = 'NPR'
     description = 'National and international news.'
     oldest_article = 7

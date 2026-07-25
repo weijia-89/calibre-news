@@ -35,7 +35,7 @@ Build a specific subject group:
 
 Build a single site:
 
-    getnews --slug rtings
+    getnews --slug ieee_spectrum
 
 Prune old EPUBs (older than 7 days):
 
@@ -58,15 +58,13 @@ Alternative via Make:
 
 ## Site Catalog
 
-16 sites in 5 subject groups, defined in `docs/CATALOG.md` (the single source of truth - no recipe is built for a slug absent from this file).
+14 sites in 5 subject groups, defined in `docs/CATALOG.md` (the single source of truth - no recipe is built for a slug absent from this file).
 
-### Tech (5)
+### Tech (3)
 
 | Slug | Site | RSS Feed |
 |------|------|----------|
-| `digitalapplied` | Digital Applied | `https://www.digitalapplied.com/feed.xml` |
 | `ieee_spectrum` | IEEE Spectrum | `https://spectrum.ieee.org/feeds/feed.rss` |
-| `rtings` | RTINGS | `https://www.rtings.com/latest-rss.xml` |
 | `chipsandcheese` | Chips and Cheese | `https://chipsandcheese.com/feed` |
 | `hwcooling` | HWCooling | `https://www.hwcooling.net/en/feed/` |
 
@@ -101,8 +99,6 @@ Alternative via Make:
 | `globaldev` | Guardian Global Dev | `https://www.theguardian.com/global-development/rss` |
 | `newschool_headlines` | The New School  -  In the Headlines | No RSS  -  uses `parse_index()` to scrape link-roll page |
 
-Note: `newschool_headlines` produces an EPUB under the `news` subject directory despite being its own recipe.
-
 ## Recipe System
 
 Each site has a `.recipe` file at `calibre_news/recipes/<slug>.recipe`. These are standard Calibre `BasicNewsRecipe` subclasses with a shared convention:
@@ -112,6 +108,8 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 class ExampleSite(BasicNewsRecipe):
     title = 'Example Site'
+    author = 'Example Site'
+    tags = ['news']
     oldest_article = 7
     compress_news_images = True
     scale_news_images = (1264, 1680)
@@ -133,6 +131,8 @@ class ExampleSite(BasicNewsRecipe):
 | `scale_news_images` | `(1264, 1680)` | Max image dimensions (width, height) |
 | `auto_cleanup` | `True` | Automatic HTML sanitisation fallback |
 | `requires_version` | `(9, 0, 0)` | Minimum Calibre version |
+| `author` | `'Site Name'` | Publisher/author embedded in EPUB metadata |
+| `tags` | `['subject']` | Subject category embedded in EPUB metadata |
 
 ### Content filtering
 
@@ -155,24 +155,20 @@ Then run the review command to test the recipe's cleanup settings against real p
 If no HTML file is given, defaults to `for_review/<slug>.html`.
 
 The review command:
-1. Copies the site's recipe to `output/review/<slug>.recipe`
+1. Copies the site's recipe to a temp directory
 2. Appends a `parse_index()` override that reads the saved HTML and returns it as a single article
 3. Runs `ebook-convert` on the modified recipe
-4. Outputs to `output/review/<slug>.epub`
+4. Outputs to `output/<slug>.epub`
 5. Cleans up the temporary recipe
 
 This lets you iterate on `keep_only_tags` / `remove_tags` against a real saved page before committing changes to the recipe.
 
-Site-specific grab instructions (from `for_review/README.md`):
+Site-specific grab instructions:
 
 | Slug | Source URL to save |
 |------|--------------------|
-| `digitalapplied` | `https://www.digitalapplied.com/blog/category/ai-development`  -  one article |
-| `rtings` | `https://www.rtings.com/research/new`  -  one `/research/<slug>/` page |
 | `cats` | `https://cats.com/reviews`  -  one `/reviews/<slug>/` page |
-| `consumerlab` | `https://www.consumerlab.com/product-updates/`  -  one `?id=<n>` page |
 | `chipsandcheese` | `https://chipsandcheese.com/` (or `.substack.com`)  -  one article |
-| `wabe` | `https://www.wabe.org`  -  one article |
 | `newschool_headlines` | `https://blogs.newschool.edu/news/in-the-headlines/`  -  full page save (not the feed) |
 
 ## Image Configuration
@@ -193,43 +189,32 @@ This sets the output profile to Kindle Oasis dimensions, producing EPUB files op
 Two mechanisms enforce a 7-day rolling window:
 
 1. **Recipe-level**: `oldest_article = 7` on every `BasicNewsRecipe` subclass tells Calibre to skip articles older than 7 days at fetch time.
-2. **Build-level**: `prune_old_epubs()` in `build.py` scans `output/**/*.epub` and deletes any file whose `st_mtime` is older than 7 days. Runs at the end of every full `getnews` cycle (unless `--no-prune` is passed).
+2. **Build-level**: `prune_old_epubs()` in `build.py` scans `output/*.epub` and deletes any file whose `st_mtime` is older than 7 days. Runs at the end of every full `getnews` cycle (unless `--no-prune` is passed).
 
 ## Output Structure
 
     output/
-    ├── tech/
-    │   ├── digitalapplied.epub
-    │   ├── ieee_spectrum.epub
-    │   ├── techspot.epub
-    │   ├── rtings.epub
-    │   ├── chipsandcheese.epub
-    │   └── hwcooling.epub
-    ├── consumer/
-    │   ├── cats.epub
-    │   └── consumerlab.epub
-    ├── security/
-    │   ├── cyberscoop.epub
-    │   ├── darkreading.epub
-    │   └── schneier.epub
-    ├── local/
-    │   ├── 285south.epub
-    │   ├── saportareport.epub
-    │   ├── decaturish.epub
-    │   ├── atlpresscollective.epub
-    │   └── wabe.epub
-    └── news/
-        ├── npr.epub
-        ├── truthout.epub
-        ├── globaldev.epub
-        └── newschool_headlines.epub
+    ├── ieee_spectrum.epub
+    ├── chipsandcheese.epub
+    ├── hwcooling.epub
+    ├── cats.epub
+    ├── cyberscoop.epub
+    ├── darkreading.epub
+    ├── schneier.epub
+    ├── 285south.epub
+    ├── saportareport.epub
+    ├── atlpresscollective.epub
+    ├── npr.epub
+    ├── truthout.epub
+    ├── globaldev.epub
+    └── newschool_headlines.epub
 
-Subject directories are created on first run. The mapping from slug to subject is driven entirely by `CATALOG.md`.
+EPUBs are written to a flat `output/` directory. The mapping from slug to subject is driven entirely by `CATALOG.md` and embedded as `tags` metadata inside each EPUB.
 
 ## Adding a New Site
 
 1. **Add to CATALOG.md**  -  insert the slug under the appropriate subject line in the fenced code block. The build will not build a site absent from this file.
-2. **Create recipe stub**  -  copy an existing `.recipe` file to `calibre_news/recipes/<slug>.recipe`. Update `title` and the class name.
+2. **Create recipe stub**  -  copy an existing `.recipe` file to `calibre_news/recipes/<slug>.recipe`. Update `title`, `author`, `tags`, and the class name.
 3. **Fill in the feed URL**  -  set the `feeds` list with the site's RSS endpoint. If the site has no RSS, implement `parse_index()` (see `newschool_headlines.recipe` for a template).
 4. **Add cleanup rules**  -  use the `for_review` workflow: drop a saved HTML page at `for_review/<slug>.html`, run the review command, inspect the output, then adjust `keep_only_tags` / `remove_tags` until the article body is clean.
 5. **(Optional) Create meta file**  -  `recipes/<slug>.meta.yaml` for per-site overrides (e.g. custom `extra_args`, non-default image dimensions). Not yet implemented.
@@ -242,6 +227,7 @@ Subject directories are created on first run. The mapping from slug to subject i
 | `ebook-convert` hangs | Site slow or blocking | Save the article manually to `for_review/<slug>.html` and re-run |
 | `[FAIL] Unable to fetch ...` | Feed URL changed or site down | Check the site's RSS feed URL. Update `feeds` in the recipe. |
 | EPUB has navigation/ads in article body | `keep_only_tags` / `remove_tags` not set | Use the `for_review` workflow to identify the correct selectors |
-| `curl: (22) HTTP 404` | Feed URL is stale | Verify the feed URL in a browser. WABE is a known offender  -  try `/news/feed/` instead of `/feed/`. |
+| `curl: (22) HTTP 404` | Feed URL is stale | Verify the feed URL in a browser |
 | `oldest_article` not filtering | Calibre's feed parser date extraction may fail | Set `max_articles_per_feed` as an additional constraint in the recipe |
 | Recipe `feeds = []` but site has no RSS | Site uses JS-rendered content or link-roll | Implement `parse_index()` (see `newschool_headlines.recipe` stub) |
+| No author or tags in EPUB metadata | Recipe missing `author` or `tags` | Add `author = 'Site Name'` and `tags = ['subject']` to the recipe class |

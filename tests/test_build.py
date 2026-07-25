@@ -42,7 +42,7 @@ def reset_sys_modules():
 class TestCatalogParsing:
 
     def test_load_catalog_expected_shape(self):
-        """Parse real CATALOG.md, assert 5 subjects and 16 slugs."""
+        """Parse real CATALOG.md, assert 5 subjects and 14 slugs."""
         from calibre_news.build import load_catalog
 
         subject_map, ordered = load_catalog()
@@ -51,12 +51,12 @@ class TestCatalogParsing:
         assert "security" in subject_map
         assert "local" in subject_map
         assert "news" in subject_map
-        assert len(subject_map["tech"]) == 5
+        assert len(subject_map["tech"]) == 3
         assert len(subject_map["consumer"]) == 1
         assert len(subject_map["security"]) == 3
         assert len(subject_map["local"]) == 3
         assert len(subject_map["news"]) == 4
-        assert len(ordered) == 16
+        assert len(ordered) == 14
 
     def test_load_catalog_ordered_consistent(self):
         """Ordered list matches concatenation of subject lists."""
@@ -137,14 +137,14 @@ class TestFindEbookConvert:
 class TestDryRun:
 
     def test_dry_run_prints_expected_commands(self):
-        """Given --dry-run --slug rtings, prints ebook-convert command."""
+        """Given --dry-run --slug ieee_spectrum, prints ebook-convert command."""
         from calibre_news.build import main
         import subprocess
 
         # Simulate CPython finding function importable (ProcessPoolExecutor
         # needs picklable top-levels — not relevant for dry-run, but we mock
         # to avoid real calibre binary check.
-        with patch("sys.argv", ["getnews", "--dry-run", "--slug", "rtings"]):
+        with patch("sys.argv", ["getnews", "--dry-run", "--slug", "ieee_spectrum"]):
             with patch("calibre_news.build.find_ebook_convert",
                        return_value=Path("/fake/ebook-convert")):
                 captured = io.StringIO()
@@ -152,7 +152,7 @@ class TestDryRun:
                     main()
                 output = captured.getvalue()
                 assert "ebook-convert" in output
-                assert "rtings" in output.lower()
+                assert "ieee_spectrum" in output.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +213,7 @@ class _MockExecutor:
 class TestBuildFiltering:
 
     def test_subject_filter_only_builds_one_subject(self):
-        """--subject tech calls ebook-convert exactly 5 times, not all 16."""
+        """--subject tech calls ebook-convert exactly 3 times, not all 14."""
         from calibre_news.build import main
         import subprocess
 
@@ -235,10 +235,10 @@ class TestBuildFiltering:
                     ):
                         main()
 
-        assert call_count == 5, f"Expected 5 calls for tech, got {call_count}"
+        assert call_count == 3, f"Expected 3 calls for tech, got {call_count}"
 
     def test_slug_filter_only_builds_one_site(self):
-        """--slug rtings calls ebook-convert exactly 1 time."""
+        """--slug ieee_spectrum calls ebook-convert exactly 1 time."""
         from calibre_news.build import main
         import subprocess
 
@@ -249,7 +249,7 @@ class TestBuildFiltering:
             call_count += 1
             return MagicMock()
 
-        with patch("sys.argv", ["getnews", "--slug", "rtings"]):
+        with patch("sys.argv", ["getnews", "--slug", "ieee_spectrum"]):
             with patch(
                 "calibre_news.build.find_ebook_convert",
                 return_value=Path("/fake/ebook-convert"),
@@ -260,7 +260,7 @@ class TestBuildFiltering:
                     ):
                         main()
 
-        assert call_count == 1, f"Expected 1 call for rtings, got {call_count}"
+        assert call_count == 1, f"Expected 1 call for ieee_spectrum, got {call_count}"
 
 class TestExitCodes:
 
@@ -300,7 +300,7 @@ class TestExitCodes:
         import subprocess
         from calibre_news.build import main
 
-        with patch("sys.argv", ["getnews", "--slug", "rtings"]):
+        with patch("sys.argv", ["getnews", "--slug", "ieee_spectrum"]):
             with patch("calibre_news.build.find_ebook_convert",
                        return_value=Path("/fake/ebook-convert")):
                 with patch.object(subprocess, "run",
@@ -327,21 +327,21 @@ class TestExitCodes:
 class TestForReview:
 
     def setup_method(self):
-        """Ensure output/review dir is clean."""
+        """Ensure output dir is clean of test artifacts."""
         from calibre_news.for_review import OUTPUT_ROOT
-        review_dir = OUTPUT_ROOT / "review"
-        if review_dir.exists():
-            for f in review_dir.glob("*.recipe"):
-                f.unlink()
+        if OUTPUT_ROOT.exists():
+            for f in OUTPUT_ROOT.glob("*.epub"):
+                if f.name.startswith("test_") or f.name in ["ieee_spectrum.epub", "cats.epub"]:
+                    f.unlink()
 
     def test_for_review_generates_valid_overlay_recipe(self, tmp_path):
         """for_review creates a recipe with parse_index() and cleans up on failure."""
         from calibre_news.for_review import main, FOR_REVIEW_DIR, OUTPUT_ROOT
         import subprocess
 
-        html_file = tmp_path / "rtings.html"
+        html_file = tmp_path / "ieee_spectrum.html"
         html_file.write_text(
-            "<html><head><title>Test RTINGS</title></head><body>Test</body></html>"
+            "<html><head><title>Test IEEE Spectrum</title></head><body>Test</body></html>"
         )
 
         captured_recipe = None
@@ -354,7 +354,7 @@ class TestForReview:
             raise subprocess.CalledProcessError(1, cmd, stderr="fake fail")
 
         try:
-            with patch("sys.argv", ["for_review", "rtings"]):
+            with patch("sys.argv", ["for_review", "ieee_spectrum"]):
                 with patch(
                     "calibre_news.for_review.find_ebook_convert",
                     return_value=Path("/fake/ebook-convert"),
@@ -374,7 +374,7 @@ class TestForReview:
             # Temp file should be cleaned up even when ebook-convert fails
             assert not temp_recipe_path.exists()
         finally:
-            review_epub = OUTPUT_ROOT / "review" / "rtings.epub"
+            review_epub = OUTPUT_ROOT / "ieee_spectrum.epub"
             if review_epub.exists():
                 review_epub.unlink()
 
@@ -383,7 +383,7 @@ class TestForReview:
         from calibre_news.for_review import main, FOR_REVIEW_DIR, OUTPUT_ROOT
         import subprocess
 
-        html_file = tmp_path / "rtings.html"
+        html_file = tmp_path / "cats.html"
         html_file.write_text(
             "<html><head><title>Test</title></head><body>Test</body></html>"
         )
@@ -397,7 +397,7 @@ class TestForReview:
             return MagicMock()
 
         try:
-            with patch("sys.argv", ["for_review", "rtings"]):
+            with patch("sys.argv", ["for_review", "cats"]):
                 with patch(
                     "calibre_news.for_review.find_ebook_convert",
                     return_value=Path("/fake/ebook-convert"),
@@ -413,7 +413,7 @@ class TestForReview:
             assert "scale_news_images = (1264, 1680)" in captured_recipe
             assert "compress_news_images = True" in captured_recipe
         finally:
-            review_epub = OUTPUT_ROOT / "review" / "rtings.epub"
+            review_epub = OUTPUT_ROOT / "cats.epub"
             if review_epub.exists():
                 review_epub.unlink()
 
@@ -430,8 +430,8 @@ class TestForReview:
         """When default HTML (for_review/<slug>.html) not present, exit 2."""
         from calibre_news.for_review import main
 
-        with patch("sys.argv", ["for_review", "rtings"]):
-            # rtings.recipe exists but for_review/rtings.html likely doesn't
+        with patch("sys.argv", ["for_review", "cats"]):
+            # cats.recipe exists but for_review/cats.html likely doesn't
             with pytest.raises(SystemExit) as exc_info:
                 main()
             assert exc_info.value.code == 2

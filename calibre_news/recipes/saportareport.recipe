@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class SaportaReport(BasicNewsRecipe):
+    tags = ['local']
+    author = 'Saporta Report'
     title = 'Saporta Report'
     description = 'Atlanta civic and business news.'
     oldest_article = 7

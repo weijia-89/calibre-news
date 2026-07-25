@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class Cats(BasicNewsRecipe):
+    tags = ['consumer']
+    author = 'Cats.com'
     title = 'Cats.com'
     description = 'Cat product reviews, health, and lifestyle.'
     oldest_article = 7

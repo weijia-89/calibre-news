@@ -40,19 +40,19 @@ def main():
         print(f"Stub file not found: {html_file}", file=sys.stderr)
         sys.exit(2)
 
-    review_dir = OUTPUT_ROOT / "review"
+    review_dir = OUTPUT_ROOT
     review_dir.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         recipe_dst = Path(tmpdir) / f"{slug}.recipe"
         shutil.copy2(recipe_src, recipe_dst)
 
-        override = f'''
+        override = '''
 
 # for_review overrides — appended programmatically
 feeds = []
 def parse_index(self):
-    # reads HTML from for_review/<slug>.html, returns a single article
+    # reads HTML from for_review/{slug}.html, returns a single article
     import re
     from calibre.ebooks.BeautifulSoup import BeautifulSoup
     with open('for_review/{slug}.html', 'r', encoding='utf-8') as f:
@@ -63,8 +63,8 @@ def parse_index(self):
         'title': title,
         'url': f'file://for_review/{slug}.html',
         'content': str(soup),
-    }})]
-'''
+    }}])]
+'''.format(slug=slug)
         with open(recipe_dst, "a", encoding="utf-8") as f:
             f.write(override)
 

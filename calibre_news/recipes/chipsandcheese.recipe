@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class ChipsAndCheese(BasicNewsRecipe):
+    tags = ['tech']
+    author = 'ChipsAndCheese'
     title = 'ChipsAndCheese'
     description = 'Hardware architecture deep-dives.'
     oldest_article = 7

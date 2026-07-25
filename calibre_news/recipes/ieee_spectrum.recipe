@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class IEEESpectrum(BasicNewsRecipe):
+    tags = ['tech']
+    author = 'IEEE Spectrum'
     title = 'IEEE Spectrum'
     description = 'Engineering and technology news.'
     oldest_article = 7
@@ -14,7 +16,44 @@ class IEEESpectrum(BasicNewsRecipe):
 
     remove_tags = [{'name': 'nav'}, {'name': 'header', 'attrs': {'class': 'site-header'}}, {'name': 'footer'}, {'name': 'aside'}, {'class_': 'sidebar'}, {'class_': 'advertisement'}, {'class_': 'ad'}, {'class_': 'social-share'}, {'id': 'comments'}, {'class_': 'comments'}, {'class_': 'related-posts'}]
 
-    extra_css = 'img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }'
+    extra_css = '''img { max-width: 100%; height: auto; } body { font-family: serif; font-size: 12pt; }
+    .calibre_navbar { display: none; }
+    .article-title { font-size: 1.5em; font-weight: bold; margin: 1em 0; }
+    .back-to-index { text-align: center; margin: 2em 0; font-size: 0.9em; }
+    .back-to-index a { text-decoration: underline; }
+    '''
+
+    def preprocess_html(self, soup, url):
+        try:
+            body = soup.find('body')
+            if body:
+                has_heading = body.find(['h1', 'h2', 'h3'])
+                if not has_heading:
+                    title_tag = soup.find('title')
+                    if title_tag and title_tag.string:
+                        from calibre.ebooks.BeautifulSoup import BeautifulSoup
+                        title_html = BeautifulSoup('<h1 class="article-title">%s</h1>' % title_tag.string)
+                        h1 = title_html.find('h1')
+                        if h1:
+                            body.insert(0, h1)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+        return soup
+
+    def postprocess_html(self, soup, first_fetch):
+        try:
+            body = soup.find('body')
+            if body:
+                from calibre.ebooks.BeautifulSoup import BeautifulSoup
+                back_html = BeautifulSoup('<div class="back-to-index"><a href="../index.html">← Back to article index</a></div>')
+                back_div = back_html.find('div')
+                if back_div:
+                    body.append(back_div)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+        return soup
 
     feeds = [
         ('IEEE Spectrum', 'https://spectrum.ieee.org/feeds/feed.rss'),

@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class NewschoolHeadlines(BasicNewsRecipe):
+    tags = ['news']
+    author = 'The New School'
     title = 'In the Headlines'
     description = 'New School link roll.'
     oldest_article = 7

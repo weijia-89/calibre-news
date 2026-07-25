@@ -1,6 +1,8 @@
 from calibre.web.feeds.news import BasicNewsRecipe
 
 class GlobalDev(BasicNewsRecipe):
+    tags = ['news']
+    author = 'Global Development'
     title = 'Global Development'
     description = 'Global development and human interest.'
     oldest_article = 7

@@ -71,9 +71,8 @@ def _build_one(slug: str, subject: str, calibre_bin: str, timeout: int) -> tuple
     if not recipe_path.is_file():
         return slug, f"Recipe not found: {recipe_path}"
 
-    dest_dir = OUTPUT_ROOT / subject
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    epub_path = dest_dir / f"{slug}.epub"
+    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
+    epub_path = OUTPUT_ROOT / f"{slug}.epub"
 
     cmd = [
         calibre_bin,
@@ -97,7 +96,7 @@ def prune_old_epubs():
     """Delete EPUBs older than PRUNE_DAYS (seconds)."""
     cutoff = PRUNE_DAYS * 86400
     now = time.time()
-    for epub in OUTPUT_ROOT.rglob("*.epub"):
+    for epub in OUTPUT_ROOT.glob("*.epub"):
         if now - epub.stat().st_mtime > cutoff:
             epub.unlink(missing_ok=True)
             print(f"Pruned old EPUB: {epub}")
@@ -153,8 +152,7 @@ def main():
 
     if args.dry_run:
         for slug in slugs:
-            subject = next(s for s, lst in subject_to_slugs.items() if slug in lst)
-            print(f"{calibre_bin} {RECIPES_DIR}/{slug}.recipe {OUTPUT_ROOT}/{subject}/{slug}.epub --output-profile={OUTPUT_PROFILE}")
+            print(f"{calibre_bin} {RECIPES_DIR}/{slug}.recipe {OUTPUT_ROOT}/{slug}.epub --output-profile={OUTPUT_PROFILE}")
         return
 
     parallel = args.parallel or os.cpu_count() or 4
